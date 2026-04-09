@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: demo
+
+logging:
+  level:
+    com.alibaba.cola: DEBUG
