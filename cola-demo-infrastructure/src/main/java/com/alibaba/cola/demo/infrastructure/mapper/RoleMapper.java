@@ -1,12 +1,12 @@
 package com.alibaba.cola.demo.infrastructure.mapper;
 
-import com.alibaba.cola.demo.infrastructure.dataobject.CustomerEntity;
+import com.alibaba.cola.demo.infrastructure.dataobject.RoleEntity;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 客户Mapper
+ * 角色Mapper
  */
 @Mapper
-public interface CustomerMapper extends BaseMapper<CustomerEntity> {
+public interface RoleMapper extends BaseMapper<RoleEntity> {
 }

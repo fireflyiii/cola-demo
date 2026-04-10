@@ -1,16 +1,17 @@
 package com.alibaba.cola.demo.infrastructure.dataobject;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+/**
+ * 客户实体
+ */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("customer")
-public class CustomerDO {
+public class CustomerEntity extends BaseEntity {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
     private String customerName;
     private String companyType;
 }

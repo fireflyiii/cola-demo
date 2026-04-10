@@ -3,7 +3,7 @@ package com.alibaba.cola.demo.infrastructure.gatewayimpl;
 import com.alibaba.cola.demo.domain.customer.Customer;
 import com.alibaba.cola.demo.domain.customer.gateway.CustomerGateway;
 import com.alibaba.cola.demo.infrastructure.convertor.CustomerConvertor;
-import com.alibaba.cola.demo.infrastructure.dataobject.CustomerDO;
+import com.alibaba.cola.demo.infrastructure.dataobject.CustomerEntity;
 import com.alibaba.cola.demo.infrastructure.mapper.CustomerMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Component;
@@ -11,6 +11,9 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 客户网关实现
+ */
 @Component
 public class CustomerGatewayImpl implements CustomerGateway {
 
@@ -22,18 +25,18 @@ public class CustomerGatewayImpl implements CustomerGateway {
 
     @Override
     public void create(Customer customer) {
-        CustomerDO customerDO = CustomerConvertor.toDO(customer);
-        customerMapper.insert(customerDO);
-        customer.setCustomerId(customerDO.getId());
+        CustomerEntity customerEntity = CustomerConvertor.toEntity(customer);
+        customerMapper.insert(customerEntity);
+        customer.setCustomerId(customerEntity.getId());
     }
 
     @Override
     public List<Customer> listByName(String customerName) {
-        LambdaQueryWrapper<CustomerDO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(CustomerDO::getCustomerName, customerName);
-        List<CustomerDO> customerDOs = customerMapper.selectList(wrapper);
-        return customerDOs.stream()
-                .map(CustomerConvertor::toEntity)
+        LambdaQueryWrapper<CustomerEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(CustomerEntity::getCustomerName, customerName);
+        List<CustomerEntity> customerEntities = customerMapper.selectList(wrapper);
+        return customerEntities.stream()
+                .map(CustomerConvertor::toDomain)
                 .collect(Collectors.toList());
     }
 }

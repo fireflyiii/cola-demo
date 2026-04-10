@@ -24,6 +24,7 @@ spring:
     baseline-version: 0
     encoding: UTF-8
     driver-class-name: com.mysql.cj.jdbc.Driver
+    validate-on-migrate: false
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
@@ -35,3 +36,12 @@ mybatis-plus:
 logging:
   level:
     com.alibaba.cola: DEBUG
+    com.alibaba.cola.demo.adapter.security: DEBUG
+
+# JWT配置
+jwt:
+  # 生产环境建议使用环境变量或配置中心
+  # secret: ${JWT_SECRET:}
+  secret: ColaDemoSecretKeyForJWTTokenGeneration2024MustBeLongEnoughForHS512
+  expiration: 86400000  # 24小时
+  issuer: cola-demo
