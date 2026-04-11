@@ -2,9 +2,13 @@ package com.alibaba.cola.demo.adapter.web;
 
 import com.alibaba.cola.demo.adapter.security.JwtTokenProvider;
 import com.alibaba.cola.demo.client.dto.LoginCmd;
+import com.alibaba.cola.demo.client.dto.LoginData;
 import com.alibaba.cola.demo.client.dto.LoginResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.alibaba.cola.demo.client.dto.data.UserDTO;
+import com.alibaba.cola.dto.Response;
+import com.alibaba.cola.dto.SingleResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -12,33 +16,28 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 认证控制器
- * 放在 adapter 层作为HTTP入口点
  */
+@Slf4j
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
-
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
-
-    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     /**
      * 用户登录
      */
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginCmd loginCmd) {
-        LOGGER.info("Login attempt for user: {} at {}", loginCmd.getUsername(), LocalDateTime.now());
+        log.info("Login attempt for user: {} at {}", loginCmd.getUsername(), LocalDateTime.now());
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -51,41 +50,56 @@ public class AuthController {
         String token = jwtTokenProvider.generateToken(authentication);
         Long expiresIn = jwtTokenProvider.getExpirationTime();
 
-        LOGGER.info("User {} logged in successfully, token expires in {} seconds",
+        log.info("User {} logged in successfully, token expires in {} seconds",
                 loginCmd.getUsername(), expiresIn);
 
-        return LoginResponse.builder()
-                .token(token)
-                .expiresIn(expiresIn)
-                .tokenType("Bearer")
-                .build();
+        List<String> roles = authentication.getAuthorities().stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
+
+        return new LoginResponse(
+                new LoginData(token, expiresIn, "Bearer"),
+                UserDTO.builder()
+                        .username(authentication.getName())
+                        .roles(roles)
+                        .build()
+        );
     }
 
     /**
      * 用户登出
      */
     @PostMapping("/logout")
-    public Map<String, Object> logout() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    public Response logout() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Response.buildFailure("401", "Not authenticated");
+        }
+
+        String username = authentication.getName();
         SecurityContextHolder.clearContext();
 
-        LOGGER.info("User {} logged out at {}", username, LocalDateTime.now());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Logout successful");
-        return response;
+        log.info("User {} logged out at {}", username, LocalDateTime.now());
+        return Response.buildSuccess();
     }
 
     /**
      * 获取当前登录用户信息
      */
     @GetMapping("/me")
-    public Map<String, Object> getCurrentUser() {
+    public SingleResponse<UserDTO> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("username", authentication.getName());
-        userInfo.put("authorities", authentication.getAuthorities());
-        return userInfo;
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return SingleResponse.buildFailure("401", "Not authenticated");
+        }
+
+        List<String> roles = authentication.getAuthorities().stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
+
+        return SingleResponse.of(UserDTO.builder()
+                .username(authentication.getName())
+                .roles(roles)
+                .build());
     }
 }

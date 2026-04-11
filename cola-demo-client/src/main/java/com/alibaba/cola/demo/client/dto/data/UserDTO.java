@@ -1,4 +1,4 @@
-package com.alibaba.cola.demo.client.dto;
+package com.alibaba.cola.demo.client.dto.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

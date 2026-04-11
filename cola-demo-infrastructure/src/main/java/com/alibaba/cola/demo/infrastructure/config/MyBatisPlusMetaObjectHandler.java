@@ -1,9 +1,8 @@
 package com.alibaba.cola.demo.infrastructure.config;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.reflection.MetaObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -12,10 +11,9 @@ import java.time.LocalDateTime;
  * MyBatis-Plus 自动填充处理器
  * 自动填充创建人、创建时间、更新人、更新时间等通用字段
  */
+@Slf4j
 @Component
 public class MyBatisPlusMetaObjectHandler implements MetaObjectHandler {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(MyBatisPlusMetaObjectHandler.class);
 
     private static final String CREATED_BY = "createdBy";
     private static final String CREATED_TIME = "createdTime";
@@ -24,7 +22,7 @@ public class MyBatisPlusMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void insertFill(MetaObject metaObject) {
-        LOGGER.debug("Start insert fill for metaObject: {}", metaObject.getOriginalObject().getClass().getSimpleName());
+        log.debug("Start insert fill for metaObject: {}", metaObject.getOriginalObject().getClass().getSimpleName());
 
         // 填充创建人
         strictInsertFill(metaObject, CREATED_BY, String.class, getCurrentUsername());
@@ -38,7 +36,7 @@ public class MyBatisPlusMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        LOGGER.debug("Start update fill for metaObject: {}", metaObject.getOriginalObject().getClass().getSimpleName());
+        log.debug("Start update fill for metaObject: {}", metaObject.getOriginalObject().getClass().getSimpleName());
 
         // 填充更新人
         strictUpdateFill(metaObject, UPDATED_BY, String.class, getCurrentUsername());

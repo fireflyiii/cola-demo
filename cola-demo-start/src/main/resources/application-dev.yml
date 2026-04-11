@@ -1,0 +1,19 @@
+# 开发环境配置
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/cola-demo?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:cola}
+    password: ${DB_PASSWORD:1qaz2wsx3edc}
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.alibaba.cola: DEBUG
+
+management:
+  endpoint:
+    health:
+      show-details: always

@@ -33,7 +33,7 @@ public interface UserMapper {
             "WHERE r.role_code IN " +
             "<foreach collection='roleCodes' item='code' open='(' separator=',' close=')'>" +
             "#{code}" +
-            "</foreach>" +
+            "</foreach> " +
             "AND p.deleted = 0 AND rp.deleted = 0 AND r.deleted = 0" +
             "</script>")
     List<String> findPermissionsByRoleCodes(@Param("roleCodes") List<String> roleCodes);

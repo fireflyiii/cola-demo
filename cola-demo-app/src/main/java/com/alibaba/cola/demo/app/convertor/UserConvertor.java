@@ -1,32 +1,16 @@
-package com.alibaba.cola.demo.infrastructure.convertor;
+package com.alibaba.cola.demo.app.convertor;
 
 import com.alibaba.cola.demo.client.dto.data.UserDTO;
 import com.alibaba.cola.demo.domain.user.User;
-import com.alibaba.cola.demo.infrastructure.dataobject.UserEntity;
 
 import java.util.List;
 
 /**
- * 用户转换器
+ * 用户DTO转换器
  */
 public class UserConvertor {
 
     private UserConvertor() {}
-
-    /**
-     * Entity转Domain
-     */
-    public static User toDomain(UserEntity userEntity) {
-        if (userEntity == null) {
-            return null;
-        }
-        User user = new User();
-        user.setUserId(userEntity.getId());
-        user.setUsername(userEntity.getUsername());
-        user.setPassword(userEntity.getPassword());
-        user.setStatus(userEntity.getStatus());
-        return user;
-    }
 
     /**
      * Domain转DTO

@@ -4,17 +4,17 @@ import com.alibaba.cola.demo.client.dto.CustomerAddCmd;
 import com.alibaba.cola.demo.domain.customer.Customer;
 import com.alibaba.cola.demo.domain.customer.gateway.CustomerGateway;
 import com.alibaba.cola.dto.Response;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
-public class CustomerAddCmdExe {
+public class CustomerAddHandler {
 
-    private final CustomerGateway customerGateway;
+    @Autowired
+    private CustomerGateway customerGateway;
 
-    public CustomerAddCmdExe(CustomerGateway customerGateway) {
-        this.customerGateway = customerGateway;
-    }
-
+    @Transactional(rollbackFor = Exception.class)
     public Response execute(CustomerAddCmd cmd) {
         Customer customer = new Customer();
         customer.setCustomerName(cmd.getCustomerName());

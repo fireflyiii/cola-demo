@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="demo"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="cola-demo"/>
+    <springProperty scope="context" name="LOG_LEVEL" source="logging.level.com.alibaba.cola" defaultValue="INFO"/>
+    <springProperty scope="context" name="SECURITY_LOG_LEVEL" source="logging.level.com.alibaba.cola.demo.adapter.security" defaultValue="INFO"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-}] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <logger name="com.alibaba.cola" level="DEBUG"/>
+    <logger name="com.alibaba.cola" level="${LOG_LEVEL}"/>
+    <logger name="com.alibaba.cola.demo.adapter.security" level="${SECURITY_LOG_LEVEL}"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

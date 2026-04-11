@@ -1,6 +1,6 @@
 package com.alibaba.cola.demo.client.api;
 
-import com.alibaba.cola.demo.client.dto.UserDTO;
+import com.alibaba.cola.demo.client.dto.data.UserDTO;
 
 /**
  * 用户服务接口

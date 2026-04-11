@@ -1,4 +1,4 @@
-package com.alibaba.cola.demo.startup;
+package com.alibaba.cola.demo.start;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;

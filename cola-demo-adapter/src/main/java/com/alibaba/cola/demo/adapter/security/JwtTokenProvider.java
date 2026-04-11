@@ -2,8 +2,7 @@ package com.alibaba.cola.demo.adapter.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,10 +19,9 @@ import java.util.stream.Collectors;
  * JWT Token Provider
  * 放在 adapter 层作为认证相关的工具组件
  */
+@Slf4j
 @Component
 public class JwtTokenProvider {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     @Value("${jwt.secret:}")
     private String jwtSecret;
@@ -40,11 +38,11 @@ public class JwtTokenProvider {
     public void init() {
         // 确保密钥长度足够（HS512需要至少64字节）
         if (jwtSecret == null || jwtSecret.length() < 32) {
-            LOGGER.warn("JWT secret is too weak, using default value. Please set a strong secret in production!");
+            log.warn("JWT secret is too weak, using default value. Please set a strong secret in production!");
             jwtSecret = "ColaDemoSecretKeyForJWTTokenGeneration2024MustBeLongEnoughForHS512";
         }
         this.signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        LOGGER.info("JwtTokenProvider initialized with expiration: {}ms, issuer: {}", jwtExpiration, jwtIssuer);
+        log.info("JwtTokenProvider initialized with expiration: {}ms, issuer: {}", jwtExpiration, jwtIssuer);
     }
 
     /**
@@ -100,15 +98,15 @@ public class JwtTokenProvider {
                     .parseClaimsJws(token);
             return true;
         } catch (SecurityException ex) {
-            LOGGER.error("Invalid JWT signature: {}", ex.getMessage());
+            log.error("Invalid JWT signature: {}", ex.getMessage());
         } catch (MalformedJwtException ex) {
-            LOGGER.error("Invalid JWT token: {}", ex.getMessage());
+            log.error("Invalid JWT token: {}", ex.getMessage());
         } catch (ExpiredJwtException ex) {
-            LOGGER.error("Expired JWT token: {}", ex.getMessage());
+            log.error("Expired JWT token: {}", ex.getMessage());
         } catch (UnsupportedJwtException ex) {
-            LOGGER.error("Unsupported JWT token: {}", ex.getMessage());
+            log.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
-            LOGGER.error("JWT claims string is empty: {}", ex.getMessage());
+            log.error("JWT claims string is empty: {}", ex.getMessage());
         }
         return false;
     }

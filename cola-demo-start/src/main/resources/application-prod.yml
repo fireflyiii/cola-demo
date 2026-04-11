@@ -1,0 +1,30 @@
+# 生产环境配置
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/cola-demo?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+logging:
+  level:
+    com.alibaba.cola: INFO
+    com.alibaba.cola.demo.adapter.security: WARN
+
+management:
+  endpoint:
+    health:
+      show-details: when-authorized
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+jwt:
+  secret: ${JWT_SECRET:}

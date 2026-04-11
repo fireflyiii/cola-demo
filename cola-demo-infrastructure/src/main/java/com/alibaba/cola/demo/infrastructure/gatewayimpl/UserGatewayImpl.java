@@ -4,6 +4,7 @@ import com.alibaba.cola.demo.domain.user.User;
 import com.alibaba.cola.demo.domain.user.gateway.UserGateway;
 import com.alibaba.cola.demo.infrastructure.convertor.UserConvertor;
 import com.alibaba.cola.demo.infrastructure.mapper.UserMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -15,11 +16,8 @@ import java.util.List;
 @Component
 public class UserGatewayImpl implements UserGateway {
 
-    private final UserMapper userMapper;
-
-    public UserGatewayImpl(UserMapper userMapper) {
-        this.userMapper = userMapper;
-    }
+    @Autowired
+    private UserMapper userMapper;
 
     @Override
     public User findByUsername(String username) {

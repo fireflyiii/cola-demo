@@ -1,5 +1,8 @@
-package com.alibaba.cola.demo.client.dto.data;
+package com.alibaba.cola.demo.client.common;
 
+import lombok.Getter;
+
+@Getter
 public enum BizErrorCode {
 
     B_CUSTOMER_NAME_NOT_BLANK("B_CUSTOMER_NAME_NOT_BLANK", "客户名称不能为空"),
@@ -11,13 +14,5 @@ public enum BizErrorCode {
     BizErrorCode(String errCode, String errDesc) {
         this.errCode = errCode;
         this.errDesc = errDesc;
-    }
-
-    public String getErrCode() {
-        return errCode;
-    }
-
-    public String getErrDesc() {
-        return errDesc;
     }
 }
