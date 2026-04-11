@@ -36,10 +36,8 @@ public class JwtTokenProvider {
 
     @PostConstruct
     public void init() {
-        // 确保密钥长度足够（HS512需要至少64字节）
-        if (jwtSecret == null || jwtSecret.length() < 32) {
-            log.warn("JWT secret is too weak, using default value. Please set a strong secret in production!");
-            jwtSecret = "ColaDemoSecretKeyForJWTTokenGeneration2024MustBeLongEnoughForHS512";
+        if (jwtSecret == null || jwtSecret.length() < 64) {
+            throw new IllegalStateException("JWT secret must be at least 64 characters long. Set JWT_SECRET environment variable.");
         }
         this.signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         log.info("JwtTokenProvider initialized with expiration: {}ms, issuer: {}", jwtExpiration, jwtIssuer);
@@ -89,6 +87,7 @@ public class JwtTokenProvider {
 
     /**
      * 验证Token
+     * 注意：ExpiredJwtException 不在此处捕获，由调用方区分处理
      */
     public boolean validateToken(String token) {
         try {
@@ -101,8 +100,6 @@ public class JwtTokenProvider {
             log.error("Invalid JWT signature: {}", ex.getMessage());
         } catch (MalformedJwtException ex) {
             log.error("Invalid JWT token: {}", ex.getMessage());
-        } catch (ExpiredJwtException ex) {
-            log.error("Expired JWT token: {}", ex.getMessage());
         } catch (UnsupportedJwtException ex) {
             log.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {

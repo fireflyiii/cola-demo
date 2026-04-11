@@ -17,10 +17,11 @@ public class CustomerConvertor {
         if (customerEntity == null) {
             return null;
         }
-        Customer customer = new Customer();
+        Customer customer = Customer.create(
+                customerEntity.getCustomerName(),
+                customerEntity.getCompanyType()
+        );
         customer.setCustomerId(customerEntity.getId());
-        customer.setCustomerName(customerEntity.getCustomerName());
-        customer.setCompanyType(customerEntity.getCompanyType());
         return customer;
     }
 

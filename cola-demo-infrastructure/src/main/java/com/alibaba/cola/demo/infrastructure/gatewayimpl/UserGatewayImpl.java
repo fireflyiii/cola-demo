@@ -37,9 +37,4 @@ public class UserGatewayImpl implements UserGateway {
         }
         return userMapper.findPermissionsByRoleCodes(roleCodes);
     }
-
-    @Override
-    public boolean updatePassword(String username, String encodedPassword) {
-        return userMapper.updatePassword(username, encodedPassword) > 0;
-    }
 }

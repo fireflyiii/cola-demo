@@ -1,10 +1,12 @@
 package com.alibaba.cola.demo.adapter.security;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -18,7 +20,6 @@ import java.io.IOException;
 
 /**
  * JWT认证过滤器
- * 放在 adapter 层是因为它是HTTP入口的过滤器组件
  */
 @Slf4j
 @Component
@@ -27,7 +28,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
     @Autowired
-    private UserDetailsServiceImpl userDetailsService;
+    private UserDetailsService userDetailsService;
+    @Autowired
+    private TokenBlacklist tokenBlacklist;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -35,23 +38,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                String username = jwtTokenProvider.getUsernameFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (StringUtils.hasText(jwt)) {
+                if (jwtTokenProvider.validateToken(jwt)) {
+                    if (tokenBlacklist.contains(jwt)) {
+                        log.debug("Token is blacklisted");
+                        request.setAttribute("authError", "Token已被注销");
+                    } else {
+                        String username = jwtTokenProvider.getUsernameFromToken(jwt);
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("Set authentication for user: {}", username);
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        log.debug("Set authentication for user: {}", username);
+                    }
+                } else {
+                    log.debug("Token validation failed");
+                    request.setAttribute("authError", "Token无效或已过期");
+                }
             }
+        } catch (ExpiredJwtException ex) {
+            log.debug("Token expired: {}", ex.getMessage());
+            request.setAttribute("authError", "Token已过期，请重新登录");
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);
+            request.setAttribute("authError", "认证失败");
         }
 
         filterChain.doFilter(request, response);

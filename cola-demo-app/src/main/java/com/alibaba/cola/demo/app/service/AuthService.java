@@ -1,7 +1,6 @@
 package com.alibaba.cola.demo.app.service;
 
 import com.alibaba.cola.demo.client.dto.LoginCmd;
-import com.alibaba.cola.demo.client.dto.LoginData;
 import com.alibaba.cola.demo.client.dto.LoginResponse;
 import com.alibaba.cola.demo.client.dto.data.UserDTO;
 import com.alibaba.cola.demo.domain.user.User;
@@ -29,10 +28,7 @@ public class AuthService {
         User user = userGateway.findByUsername(username);
         List<String> roles = userGateway.findRoleCodesByUsername(username);
 
-        return new LoginResponse(
-                new LoginData(token, expiresIn, "Bearer"),
-                UserConvertor.toDTO(user, roles)
-        );
+        return new LoginResponse(token, expiresIn, "Bearer", UserConvertor.toDTO(user, roles));
     }
 
     /**

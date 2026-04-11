@@ -16,9 +16,7 @@ public class CustomerAddHandler {
 
     @Transactional(rollbackFor = Exception.class)
     public Response execute(CustomerAddCmd cmd) {
-        Customer customer = new Customer();
-        customer.setCustomerName(cmd.getCustomerName());
-        customer.setCompanyType(cmd.getCompanyType());
+        Customer customer = Customer.create(cmd.getCustomerName(), cmd.getCompanyType());
         customerGateway.create(customer);
         return Response.buildSuccess();
     }

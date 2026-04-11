@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS sys_role (
 
 -- 用户角色关联表
 CREATE TABLE IF NOT EXISTS sys_user_role (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL COMMENT '用户ID',
     role_id BIGINT NOT NULL COMMENT '角色ID',
     created_by VARCHAR(50) DEFAULT 'system' COMMENT '创建人',
@@ -33,7 +34,7 @@ CREATE TABLE IF NOT EXISTS sys_user_role (
     updated_by VARCHAR(50) DEFAULT 'system' COMMENT '更新人',
     updated_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted TINYINT DEFAULT 0 COMMENT '是否删除:0否 1是',
-    PRIMARY KEY (user_id, role_id)
+    UNIQUE KEY uk_user_role (user_id, role_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联表';
 
 -- 权限表
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS sys_permission (
 
 -- 角色权限关联表
 CREATE TABLE IF NOT EXISTS sys_role_permission (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     role_id BIGINT NOT NULL COMMENT '角色ID',
     permission_id BIGINT NOT NULL COMMENT '权限ID',
     created_by VARCHAR(50) DEFAULT 'system' COMMENT '创建人',
@@ -59,7 +61,7 @@ CREATE TABLE IF NOT EXISTS sys_role_permission (
     updated_by VARCHAR(50) DEFAULT 'system' COMMENT '更新人',
     updated_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted TINYINT DEFAULT 0 COMMENT '是否删除:0否 1是',
-    PRIMARY KEY (role_id, permission_id)
+    UNIQUE KEY uk_role_permission (role_id, permission_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关联表';
 
 -- 初始化超级管理员角色

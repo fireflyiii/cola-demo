@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
  * 登录命令
  */
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = true)
 public class LoginCmd extends Command {
     private String username;
     private String password;

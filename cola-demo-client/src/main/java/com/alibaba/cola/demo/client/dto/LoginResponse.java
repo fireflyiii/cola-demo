@@ -1,24 +1,29 @@
 package com.alibaba.cola.demo.client.dto;
 
 import com.alibaba.cola.demo.client.dto.data.UserDTO;
-import com.alibaba.cola.dto.SingleResponse;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * 登录响应
  */
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-public class LoginResponse extends SingleResponse<LoginData> {
+@AllArgsConstructor
+public class LoginResponse {
 
+    private boolean success = true;
+    private String token;
+    private Long expiresIn;
+    private String tokenType;
     private UserDTO user;
 
-    public LoginResponse(LoginData data, UserDTO user) {
-        this.setSuccess(true);
-        this.setData(data);
+    public LoginResponse(String token, Long expiresIn, String tokenType, UserDTO user) {
+        this.success = true;
+        this.token = token;
+        this.expiresIn = expiresIn;
+        this.tokenType = tokenType;
         this.user = user;
     }
 }

@@ -7,8 +7,8 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/cola-demo?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${DB_USERNAME:cola}
-    password: ${DB_PASSWORD:1qaz2wsx3edc}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -23,7 +23,6 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     encoding: UTF-8
-    driver-class-name: com.mysql.cj.jdbc.Driver
     validate-on-migrate: false
 
 mybatis-plus:
@@ -31,7 +30,6 @@ mybatis-plus:
   type-aliases-package: com.alibaba.cola.demo.infrastructure.dataobject
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 # Actuator监控配置
 management:
@@ -42,20 +40,21 @@ management:
   endpoint:
     health:
       show-details: never
-  health:
-    db:
-      enabled: false
   metrics:
     tags:
       application: ${spring.application.name}
 
 logging:
   level:
-    com.alibaba.cola: DEBUG
-    com.alibaba.cola.demo.adapter.security: DEBUG
+    com.alibaba.cola: INFO
+    com.alibaba.cola.demo.adapter.security: INFO
 
 # JWT配置
 jwt:
-  secret: ${JWT_SECRET:ColaDemoSecretKeyForJWTTokenGeneration2024MustBeLongEnoughForHS512}
+  secret: ${JWT_SECRET}
   expiration: 86400000  # 24小时
   issuer: cola-demo
+
+# CORS配置
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:8080

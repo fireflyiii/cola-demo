@@ -29,12 +29,4 @@ public interface UserGateway {
      * @return 权限编码列表
      */
     List<String> findPermissionsByRoleCodes(List<String> roleCodes);
-
-    /**
-     * 更新用户密码
-     * @param username 用户名
-     * @param encodedPassword 加密后的密码
-     * @return 是否更新成功
-     */
-    boolean updatePassword(String username, String encodedPassword);
 }

@@ -224,16 +224,30 @@ java -jar -Dspring.profiles.active=prod cola-demo-start-1.0.0-SNAPSHOT.jar
 
 ## 6. 异常处理
 
-项目通过 `GlobalExceptionHandler` 统一处理异常，返回标准化的错误响应。
+项目通过 `GlobalExceptionHandler`（Controller 层异常）和 `SecurityConfig` 中的 `AuthenticationEntryPoint`/`AccessDeniedHandler`（Security 过滤器链异常）统一处理异常，返回标准化的错误响应。
 
 ### 6.1 异常处理范围
+
+**Security 过滤器链**（由 `AuthenticationEntryPoint` / `AccessDeniedHandler` 处理）：
+
+| 场景 | HTTP 状态码 | 错误信息 |
+|------|-------------|----------|
+| Token 已过期 | 401 | Token已过期，请重新登录 |
+| Token 无效/签名错误 | 401 | Token无效或已过期 |
+| Token 已被注销 | 401 | Token已被注销 |
+| 未携带 Token 访问受保护资源 | 401 | 未认证，请先登录 |
+| 已认证但权限不足 | 403 | 权限不足 |
+
+**Controller 层**（由 `GlobalExceptionHandler` 处理）：
 
 | 异常类型 | HTTP 状态码 | 错误信息 |
 |----------|-------------|----------|
 | `BadCredentialsException` | 401 | 用户名或密码错误 |
-| `UsernameNotFoundException` | 401 | 用户不存在 |
 | `AuthenticationException` | 401 | 认证失败 |
-| `ExpiredJwtException` | 401 | Token已过期，请重新登录 |
+| `MethodArgumentNotValidException` | 400 | 字段校验错误详情 |
+| `ConstraintViolationException` | 400 | 约束违反详情 |
+| `HttpMessageNotReadableException` | 400 | 请求体格式错误 |
+| `AccessDeniedException` | 403 | 权限不足 |
 | `Exception` (兜底) | 500 | 服务器内部错误 |
 
 ### 6.2 认证异常示例
@@ -346,7 +360,7 @@ public class CustomerPageHandler {
 | 分页查询 | `CustomerPageHandler.java` | `cola-demo-app/.../app/executor/query/` |
 | 日志追踪 | `TraceIdFilter.java` | `cola-demo-adapter/.../adapter/filter/` |
 | JWT 认证 | `AuthController.java` | `cola-demo-adapter/.../adapter/web/` |
-| 全局异常处理 | `GlobalExceptionHandler.java` | `cola-demo-adapter/.../adapter/web/` |
+| 全局异常处理 | `GlobalExceptionHandler.java` | `cola-demo-adapter/.../adapter/web/handler/` |
 | 健康检查 | Actuator 端点 | `/actuator/health` |
 
 ---

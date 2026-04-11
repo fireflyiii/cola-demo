@@ -17,3 +17,10 @@ management:
   endpoint:
     health:
       show-details: always
+  health:
+    db:
+      enabled: true
+
+# JWT配置（开发环境使用默认密钥）
+jwt:
+  secret: ${JWT_SECRET:ColaDemoSecretKeyForJWTTokenGeneration2024MustBeLongEnoughForHS512}
