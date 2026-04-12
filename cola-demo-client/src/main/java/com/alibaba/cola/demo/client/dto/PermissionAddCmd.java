@@ -4,7 +4,7 @@ import com.alibaba.cola.dto.Command;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * 权限创建命令

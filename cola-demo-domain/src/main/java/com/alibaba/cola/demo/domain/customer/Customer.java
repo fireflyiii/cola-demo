@@ -1,16 +1,19 @@
 package com.alibaba.cola.demo.domain.customer;
 
+import com.alibaba.cola.demo.client.common.BizErrorCode;
+import com.alibaba.cola.demo.client.common.DomainException;
+import com.alibaba.cola.demo.domain.common.AggregateRoot;
 import lombok.Getter;
 
 /**
- * 客户领域实体
+ * 客户聚合根
  */
 @Getter
-public class Customer {
+public class Customer implements AggregateRoot {
 
     private Long customerId;
     private String customerName;
-    private String companyType;
+    private CompanyType companyType;
 
     /**
      * 创建客户
@@ -18,7 +21,7 @@ public class Customer {
     public static Customer create(String customerName, String companyType) {
         Customer customer = new Customer();
         customer.customerName = customerName;
-        customer.companyType = companyType;
+        customer.companyType = CompanyType.fromCode(companyType);
         customer.validate();
         return customer;
     }
@@ -28,7 +31,7 @@ public class Customer {
      */
     public void validate() {
         if (customerName == null || customerName.trim().isEmpty()) {
-            throw new IllegalArgumentException("客户名称不能为空");
+            throw new DomainException(BizErrorCode.B_CUSTOMER_NAME_NOT_BLANK);
         }
     }
 

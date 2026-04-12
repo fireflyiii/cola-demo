@@ -4,7 +4,7 @@ import com.alibaba.cola.dto.Command;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 为角色分配权限命令

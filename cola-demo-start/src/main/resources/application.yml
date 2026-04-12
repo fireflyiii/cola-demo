@@ -58,3 +58,13 @@ jwt:
 # CORS配置
 cors:
   allowed-origins: http://localhost:3000,http://localhost:8080
+
+# SpringDoc配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: com.alibaba.cola.demo.adapter.web

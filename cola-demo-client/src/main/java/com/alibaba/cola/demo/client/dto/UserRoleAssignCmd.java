@@ -1,11 +1,9 @@
 package com.alibaba.cola.demo.client.dto;
 
 import com.alibaba.cola.dto.Command;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 
 /**
  * 为用户分配角色命令

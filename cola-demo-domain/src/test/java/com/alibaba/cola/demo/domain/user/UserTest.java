@@ -8,23 +8,21 @@ class UserTest {
 
     @Test
     void shouldBeEnabledWhenStatusIsOne() {
-        User user = new User();
-        user.setStatus(1);
+        User user = User.rebuild(null, "test", "encodedPwd", 1);
 
         assertTrue(user.isEnabled());
     }
 
     @Test
     void shouldNotBeEnabledWhenStatusIsZero() {
-        User user = new User();
-        user.setStatus(0);
+        User user = User.rebuild(null, "test", "encodedPwd", 0);
 
         assertFalse(user.isEnabled());
     }
 
     @Test
     void shouldNotBeEnabledWhenStatusIsNull() {
-        User user = new User();
+        User user = User.rebuild(null, "test", "encodedPwd", null);
 
         assertFalse(user.isEnabled());
     }

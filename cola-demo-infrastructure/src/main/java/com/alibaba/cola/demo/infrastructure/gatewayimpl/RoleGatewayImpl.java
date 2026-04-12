@@ -2,13 +2,13 @@ package com.alibaba.cola.demo.infrastructure.gatewayimpl;
 
 import com.alibaba.cola.demo.domain.user.Role;
 import com.alibaba.cola.demo.domain.user.gateway.RoleGateway;
-import com.alibaba.cola.demo.infrastructure.convertor.RoleConvertor;
+import com.alibaba.cola.demo.infrastructure.convertor.RoleAssembler;
 import com.alibaba.cola.demo.infrastructure.dataobject.RoleEntity;
 import com.alibaba.cola.demo.infrastructure.dataobject.UserRoleEntity;
 import com.alibaba.cola.demo.infrastructure.mapper.RoleMapper;
 import com.alibaba.cola.demo.infrastructure.mapper.UserRoleMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,16 +18,16 @@ import java.util.stream.Collectors;
  * 角色网关实现
  */
 @Component
+@RequiredArgsConstructor
 public class RoleGatewayImpl implements RoleGateway {
 
-    @Autowired
-    private RoleMapper roleMapper;
-    @Autowired
-    private UserRoleMapper userRoleMapper;
+    private final RoleMapper roleMapper;
+    private final UserRoleMapper userRoleMapper;
+    private final RoleAssembler roleAssembler;
 
     @Override
     public void create(Role role) {
-        RoleEntity entity = RoleConvertor.toEntity(role);
+        RoleEntity entity = roleAssembler.toEntity(role);
         roleMapper.insert(entity);
         role.setRoleId(entity.getId());
     }
@@ -37,7 +37,7 @@ public class RoleGatewayImpl implements RoleGateway {
         LambdaQueryWrapper<RoleEntity> wrapper = new LambdaQueryWrapper<>();
         List<RoleEntity> entities = roleMapper.selectList(wrapper);
         return entities.stream()
-                .map(RoleConvertor::toDomain)
+                .map(roleAssembler::toDomain)
                 .collect(Collectors.toList());
     }
 

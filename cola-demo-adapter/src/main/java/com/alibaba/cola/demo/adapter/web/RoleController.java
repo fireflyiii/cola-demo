@@ -6,11 +6,11 @@ import com.alibaba.cola.demo.client.dto.UserRoleAssignCmd;
 import com.alibaba.cola.demo.client.dto.data.RoleDTO;
 import com.alibaba.cola.dto.MultiResponse;
 import com.alibaba.cola.dto.Response;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 /**
  * 角色管理控制器
@@ -18,10 +18,10 @@ import javax.validation.Valid;
 @Slf4j
 @RestController
 @RequestMapping("/role")
+@RequiredArgsConstructor
 public class RoleController {
 
-    @Autowired
-    private IRoleService roleService;
+    private final IRoleService roleService;
 
     /**
      * 添加角色

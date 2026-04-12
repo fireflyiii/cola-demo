@@ -9,7 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -56,13 +56,13 @@ public class JwtTokenProvider {
                 .collect(Collectors.joining(","));
 
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
+                .subject(userDetails.getUsername())
                 .claim("authorities", authorities)
                 .claim("type", "access")
-                .setIssuer(jwtIssuer)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(signingKey, SignatureAlgorithm.HS512)
+                .issuer(jwtIssuer)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(signingKey)
                 .compact();
     }
 
@@ -77,11 +77,11 @@ public class JwtTokenProvider {
      * 从Token获取用户名
      */
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(signingKey)
+        Claims claims = Jwts.parser()
+                .verifyWith(signingKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
         return claims.getSubject();
     }
 
@@ -91,10 +91,10 @@ public class JwtTokenProvider {
      */
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(signingKey)
+            Jwts.parser()
+                    .verifyWith(signingKey)
                     .build()
-                    .parseClaimsJws(token);
+                    .parseSignedClaims(token);
             return true;
         } catch (SecurityException ex) {
             log.error("Invalid JWT signature: {}", ex.getMessage());
@@ -113,11 +113,11 @@ public class JwtTokenProvider {
      */
     public Long getRemainingTime(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(signingKey)
+            Claims claims = Jwts.parser()
+                    .verifyWith(signingKey)
                     .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+                    .parseSignedClaims(token)
+                    .getPayload();
             Date expiration = claims.getExpiration();
             long remaining = (expiration.getTime() - System.currentTimeMillis()) / 1000;
             return remaining > 0 ? remaining : 0;

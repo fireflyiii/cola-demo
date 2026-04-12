@@ -6,11 +6,11 @@ import com.alibaba.cola.demo.client.dto.RolePermissionAssignCmd;
 import com.alibaba.cola.demo.client.dto.data.PermissionDTO;
 import com.alibaba.cola.dto.MultiResponse;
 import com.alibaba.cola.dto.Response;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 /**
  * 权限管理控制器
@@ -18,10 +18,10 @@ import javax.validation.Valid;
 @Slf4j
 @RestController
 @RequestMapping("/permission")
+@RequiredArgsConstructor
 public class PermissionController {
 
-    @Autowired
-    private IPermissionService permissionService;
+    private final IPermissionService permissionService;
 
     /**
      * 添加权限

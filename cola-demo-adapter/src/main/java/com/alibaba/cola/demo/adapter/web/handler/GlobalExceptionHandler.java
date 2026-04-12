@@ -1,5 +1,6 @@
 package com.alibaba.cola.demo.adapter.web.handler;
 
+import com.alibaba.cola.demo.client.common.DomainException;
 import com.alibaba.cola.dto.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<Response> handleDomainException(DomainException ex) {
+        log.warn("Domain exception: code={}, message={}", ex.getErrCode(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Response.buildFailure(ex.getErrCode(), ex.getMessage()));
+    }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Response> handleBadCredentials(BadCredentialsException ex) {
@@ -43,8 +51,8 @@ public class GlobalExceptionHandler {
                 .body(Response.buildFailure("400", message));
     }
 
-    @ExceptionHandler(javax.validation.ConstraintViolationException.class)
-    public ResponseEntity<Response> handleConstraintViolation(javax.validation.ConstraintViolationException ex) {
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<Response> handleConstraintViolation(jakarta.validation.ConstraintViolationException ex) {
         String message = ex.getConstraintViolations().stream()
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining(", "));

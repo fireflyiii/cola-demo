@@ -1,12 +1,13 @@
 package com.alibaba.cola.demo.app.service;
 
+import com.alibaba.cola.demo.app.convertor.UserConvertor;
 import com.alibaba.cola.demo.client.dto.LoginCmd;
 import com.alibaba.cola.demo.client.dto.LoginResponse;
+import com.alibaba.cola.demo.client.dto.data.UserAuthInfo;
 import com.alibaba.cola.demo.client.dto.data.UserDTO;
 import com.alibaba.cola.demo.domain.user.User;
 import com.alibaba.cola.demo.domain.user.gateway.UserGateway;
-import com.alibaba.cola.demo.app.convertor.UserConvertor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,10 +16,11 @@ import java.util.List;
  * 认证服务
  */
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
-    @Autowired
-    private UserGateway userGateway;
+    private final UserGateway userGateway;
+    private final UserConvertor userConvertor;
 
     /**
      * 用户登录
@@ -28,7 +30,7 @@ public class AuthService {
         User user = userGateway.findByUsername(username);
         List<String> roles = userGateway.findRoleCodesByUsername(username);
 
-        return new LoginResponse(token, expiresIn, "Bearer", UserConvertor.toDTO(user, roles));
+        return new LoginResponse(token, expiresIn, "Bearer", userConvertor.toDTO(user, roles));
     }
 
     /**
@@ -37,6 +39,26 @@ public class AuthService {
     public UserDTO getUserInfo(String username) {
         User user = userGateway.findByUsername(username);
         List<String> roles = userGateway.findRoleCodesByUsername(username);
-        return UserConvertor.toDTO(user, roles);
+        return userConvertor.toDTO(user, roles);
+    }
+
+    /**
+     * 获取用户认证信息（供Adapter层UserDetailsService使用）
+     */
+    public UserAuthInfo loadUserAuthInfo(String username) {
+        User user = userGateway.findByUsername(username);
+        if (user == null) {
+            return null;
+        }
+        List<String> roleCodes = userGateway.findRoleCodesByUsername(username);
+        List<String> permissionCodes = userGateway.findPermissionsByRoleCodes(roleCodes);
+
+        return new UserAuthInfo(
+                user.getUsername(),
+                user.getPassword().getEncoded(),
+                user.isEnabled(),
+                roleCodes,
+                permissionCodes
+        );
     }
 }
