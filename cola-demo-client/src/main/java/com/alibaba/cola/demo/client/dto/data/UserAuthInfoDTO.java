@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserAuthInfo {
+public class UserAuthInfoDTO {
 
     private String username;
     private String encodedPassword;

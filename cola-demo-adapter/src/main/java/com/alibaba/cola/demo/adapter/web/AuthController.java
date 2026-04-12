@@ -5,7 +5,7 @@ import com.alibaba.cola.demo.adapter.security.TokenBlacklist;
 import com.alibaba.cola.demo.client.dto.LoginCmd;
 import com.alibaba.cola.demo.client.dto.LoginResponse;
 import com.alibaba.cola.demo.client.dto.data.UserDTO;
-import com.alibaba.cola.demo.app.service.AuthService;
+import com.alibaba.cola.demo.client.api.IAuthService;
 import com.alibaba.cola.dto.Response;
 import com.alibaba.cola.dto.SingleResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
-    private final AuthService authService;
+    private final IAuthService authService;
     private final TokenBlacklist tokenBlacklist;
 
     /**

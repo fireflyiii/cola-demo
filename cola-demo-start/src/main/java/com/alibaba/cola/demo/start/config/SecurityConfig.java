@@ -1,6 +1,6 @@
 package com.alibaba.cola.demo.start.config;
 
-import com.alibaba.cola.demo.adapter.security.JwtAuthenticationFilter;
+import com.alibaba.cola.demo.adapter.security.AuthenticationFilter;
 import com.alibaba.cola.dto.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,7 +39,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AuthenticationFilter authenticationFilter;
     private final ObjectMapper objectMapper;
 
     @Value("${cors.allowed-origins}")
@@ -66,9 +66,11 @@ public class SecurityConfig {
                         .requestMatchers("/customer/**").authenticated()
                         .requestMatchers("/role/**").authenticated()
                         .requestMatchers("/permission/**").authenticated()
+                        .requestMatchers("/api-app/**").authenticated()
+                        .requestMatchers("/open/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -99,7 +101,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Trace-Id"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Trace-Id", "X-API-Key"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setMaxAge(3600L);
 

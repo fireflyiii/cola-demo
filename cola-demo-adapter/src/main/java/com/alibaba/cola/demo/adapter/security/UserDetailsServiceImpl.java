@@ -1,7 +1,7 @@
 package com.alibaba.cola.demo.adapter.security;
 
-import com.alibaba.cola.demo.app.service.AuthService;
-import com.alibaba.cola.demo.client.dto.data.UserAuthInfo;
+import com.alibaba.cola.demo.client.api.IAuthService;
+import com.alibaba.cola.demo.client.dto.data.UserAuthInfoDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,11 +22,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final AuthService authService;
+    private final IAuthService authService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserAuthInfo authInfo = authService.loadUserAuthInfo(username);
+        UserAuthInfoDTO authInfo = authService.loadUserAuthInfo(username);
         if (authInfo == null) {
             log.warn("User not found: {}", username);
             throw new UsernameNotFoundException("User not found: " + username);
