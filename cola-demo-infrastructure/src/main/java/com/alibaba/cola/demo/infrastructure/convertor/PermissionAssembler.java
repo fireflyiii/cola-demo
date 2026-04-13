@@ -1,7 +1,7 @@
 package com.alibaba.cola.demo.infrastructure.convertor;
 
 import com.alibaba.cola.demo.domain.user.Permission;
-import com.alibaba.cola.demo.domain.user.ResourceType;
+import com.alibaba.cola.demo.domain.enums.ResourceType;
 import com.alibaba.cola.demo.infrastructure.dataobject.PermissionEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;

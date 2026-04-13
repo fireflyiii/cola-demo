@@ -3,6 +3,7 @@ package com.alibaba.cola.demo.domain.apiapp;
 import com.alibaba.cola.demo.client.common.BizErrorCode;
 import com.alibaba.cola.demo.client.common.DomainException;
 import com.alibaba.cola.demo.domain.common.AggregateRoot;
+import com.alibaba.cola.demo.domain.common.PathMatcher;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -70,16 +71,7 @@ public class ApiApp implements AggregateRoot {
      * 判断是否允许访问指定路径
      */
     public boolean isPathAllowed(String requestPath) {
-        if (allowedPaths == null || allowedPaths.trim().isEmpty()) {
-            return false;
-        }
-        String[] patterns = allowedPaths.split(",");
-        for (String pattern : patterns) {
-            if (matchPath(pattern.trim(), requestPath)) {
-                return true;
-            }
-        }
-        return false;
+        return PathMatcher.isPathAllowed(allowedPaths, requestPath);
     }
 
     /**
@@ -92,30 +84,5 @@ public class ApiApp implements AggregateRoot {
     private static String generateApiKey() {
         return "ak_" + UUID.randomUUID().toString().replace("-", "")
                 + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
-
-    /**
-     * 简单的Ant路径匹配（支持 * 和 **）
-     */
-    private boolean matchPath(String pattern, String path) {
-        // 精确匹配
-        if (!pattern.contains("*")) {
-            return pattern.equals(path);
-        }
-        // /** 匹配所有子路径
-        if (pattern.endsWith("/**")) {
-            String prefix = pattern.substring(0, pattern.length() - 3);
-            return path.startsWith(prefix);
-        }
-        // /* 匹配单层路径
-        if (pattern.endsWith("/*")) {
-            String prefix = pattern.substring(0, pattern.length() - 2);
-            if (!path.startsWith(prefix)) {
-                return false;
-            }
-            String remaining = path.substring(prefix.length());
-            return !remaining.contains("/");
-        }
-        return false;
     }
 }

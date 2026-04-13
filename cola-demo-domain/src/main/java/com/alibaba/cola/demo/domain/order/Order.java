@@ -3,6 +3,7 @@ package com.alibaba.cola.demo.domain.order;
 import com.alibaba.cola.demo.client.common.BizErrorCode;
 import com.alibaba.cola.demo.client.common.DomainException;
 import com.alibaba.cola.demo.domain.common.AggregateRoot;
+import com.alibaba.cola.demo.domain.enums.OrderStatus;
 import lombok.Getter;
 
 import java.math.BigDecimal;

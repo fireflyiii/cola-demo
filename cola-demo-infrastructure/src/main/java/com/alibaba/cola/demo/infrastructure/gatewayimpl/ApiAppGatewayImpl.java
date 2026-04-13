@@ -1,6 +1,6 @@
 package com.alibaba.cola.demo.infrastructure.gatewayimpl;
 
-import com.alibaba.cola.demo.client.common.PageResult;
+import com.alibaba.cola.demo.infrastructure.util.PageHelper;
 import com.alibaba.cola.demo.client.dto.ApiAppPageQry;
 import com.alibaba.cola.demo.domain.apiapp.ApiApp;
 import com.alibaba.cola.demo.domain.apiapp.gateway.ApiAppGateway;
@@ -64,8 +64,8 @@ public class ApiAppGatewayImpl implements ApiAppGateway {
         if (qry.getStatus() != null) {
             wrapper.eq(ApiAppEntity::getStatus, qry.getStatus());
         }
-        return PageResult.toPageResponse(
-                apiAppMapper.selectPage(PageResult.toPage(qry), wrapper),
+        return PageHelper.toPageResponse(
+                apiAppMapper.selectPage(PageHelper.toPage(qry), wrapper),
                 apiAppAssembler::toDomain
         );
     }

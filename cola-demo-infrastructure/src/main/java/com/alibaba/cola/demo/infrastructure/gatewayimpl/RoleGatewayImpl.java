@@ -1,6 +1,6 @@
 package com.alibaba.cola.demo.infrastructure.gatewayimpl;
 
-import com.alibaba.cola.demo.client.common.PageResult;
+import com.alibaba.cola.demo.infrastructure.util.PageHelper;
 import com.alibaba.cola.demo.client.dto.RolePageQry;
 import com.alibaba.cola.demo.domain.user.Role;
 import com.alibaba.cola.demo.domain.user.gateway.RoleGateway;
@@ -80,8 +80,8 @@ public class RoleGatewayImpl implements RoleGateway {
         if (qry.getStatus() != null) {
             wrapper.eq(RoleEntity::getStatus, qry.getStatus());
         }
-        return PageResult.toPageResponse(
-                roleMapper.selectPage(PageResult.toPage(qry), wrapper),
+        return PageHelper.toPageResponse(
+                roleMapper.selectPage(PageHelper.toPage(qry), wrapper),
                 roleAssembler::toDomain
         );
     }

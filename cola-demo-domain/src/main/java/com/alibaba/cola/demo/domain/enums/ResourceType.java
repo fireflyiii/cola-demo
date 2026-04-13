@@ -1,4 +1,4 @@
-package com.alibaba.cola.demo.domain.user;
+package com.alibaba.cola.demo.domain.enums;
 
 /**
  * 资源类型值对象

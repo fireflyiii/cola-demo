@@ -3,6 +3,7 @@ package com.alibaba.cola.demo.domain.customer;
 import com.alibaba.cola.demo.client.common.BizErrorCode;
 import com.alibaba.cola.demo.client.common.DomainException;
 import com.alibaba.cola.demo.domain.common.AggregateRoot;
+import com.alibaba.cola.demo.domain.enums.CompanyType;
 import lombok.Getter;
 
 /**
@@ -57,6 +58,6 @@ public class Customer implements AggregateRoot {
      * 判断是否为同一客户
      */
     public boolean isSameCustomer(Customer other) {
-        return this.customerId != null && this.customerId.equals(other.getCustomerId());
+        return other != null && this.customerId != null && this.customerId.equals(other.getCustomerId());
     }
 }

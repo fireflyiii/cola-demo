@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -50,9 +51,13 @@ public class UserGatewayImpl implements UserGateway {
         , Duration.ofSeconds(CacheKeys.USER_AUTH_TTL_SECONDS));
     }
 
+    /**
+     * 使用排序后的角色编码拼接作为缓存key，确保确定性和一致性
+     */
     private String hashRoleCodes(List<String> roleCodes) {
+        List<String> sorted = roleCodes.stream().sorted(Comparator.naturalOrder()).toList();
         StringJoiner joiner = new StringJoiner(",");
-        roleCodes.forEach(joiner::add);
-        return String.valueOf(joiner.toString().hashCode());
+        sorted.forEach(joiner::add);
+        return joiner.toString();
     }
 }

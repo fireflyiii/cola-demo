@@ -1,6 +1,6 @@
 package com.alibaba.cola.demo.infrastructure.gatewayimpl;
 
-import com.alibaba.cola.demo.client.common.PageResult;
+import com.alibaba.cola.demo.infrastructure.util.PageHelper;
 import com.alibaba.cola.demo.client.dto.PermissionPageQry;
 import com.alibaba.cola.demo.domain.user.Permission;
 import com.alibaba.cola.demo.domain.user.gateway.PermissionGateway;
@@ -83,8 +83,8 @@ public class PermissionGatewayImpl implements PermissionGateway {
         if (StringUtils.isNotBlank(qry.getResourcePath())) {
             wrapper.like(PermissionEntity::getResourcePath, qry.getResourcePath());
         }
-        return PageResult.toPageResponse(
-                permissionMapper.selectPage(PageResult.toPage(qry), wrapper),
+        return PageHelper.toPageResponse(
+                permissionMapper.selectPage(PageHelper.toPage(qry), wrapper),
                 permissionAssembler::toDomain
         );
     }

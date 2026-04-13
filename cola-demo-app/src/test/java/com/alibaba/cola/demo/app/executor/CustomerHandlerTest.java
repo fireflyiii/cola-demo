@@ -6,7 +6,7 @@ import com.alibaba.cola.demo.client.dto.CustomerListByNameQry;
 import com.alibaba.cola.demo.client.dto.data.CustomerDTO;
 import com.alibaba.cola.demo.domain.common.DomainEventPublisher;
 import com.alibaba.cola.demo.domain.customer.Customer;
-import com.alibaba.cola.demo.domain.customer.CompanyType;
+import com.alibaba.cola.demo.domain.enums.CompanyType;
 import com.alibaba.cola.demo.domain.customer.gateway.CustomerGateway;
 import com.alibaba.cola.dto.MultiResponse;
 import com.alibaba.cola.dto.Response;

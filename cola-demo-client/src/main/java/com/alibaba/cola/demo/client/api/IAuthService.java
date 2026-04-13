@@ -18,7 +18,7 @@ public interface IAuthService {
     /**
      * 刷新Token
      */
-    LoginResponse refreshToken(String username, String refreshToken);
+    LoginResponse refreshToken(String username, String accessToken, String refreshToken, Long expiresIn);
 
     /**
      * 根据用户名获取用户信息

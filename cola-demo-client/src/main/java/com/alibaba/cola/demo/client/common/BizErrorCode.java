@@ -38,6 +38,9 @@ public enum BizErrorCode {
     B_API_APP_EXPIRED("API应用已过期"),
     B_API_APP_PATH_NOT_ALLOWED("API应用无权访问该路径"),
 
+    // Auth
+    B_AUTH_LOGIN_RATE_LIMITED("登录尝试过于频繁，请稍后再试"),
+
     // Common
     B_PERMISSION_DENIED("权限不足");
 

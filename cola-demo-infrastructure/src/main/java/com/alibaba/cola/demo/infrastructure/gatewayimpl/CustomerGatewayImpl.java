@@ -1,6 +1,6 @@
 package com.alibaba.cola.demo.infrastructure.gatewayimpl;
 
-import com.alibaba.cola.demo.client.common.PageResult;
+import com.alibaba.cola.demo.infrastructure.util.PageHelper;
 import com.alibaba.cola.demo.client.dto.CustomerPageQry;
 import com.alibaba.cola.demo.domain.customer.Customer;
 import com.alibaba.cola.demo.domain.customer.gateway.CustomerGateway;
@@ -49,8 +49,8 @@ public class CustomerGatewayImpl implements CustomerGateway {
         if (StringUtils.isNotBlank(qry.getCustomerName())) {
             wrapper.like(CustomerEntity::getCustomerName, qry.getCustomerName());
         }
-        return PageResult.toPageResponse(
-                customerMapper.selectPage(PageResult.toPage(qry), wrapper),
+        return PageHelper.toPageResponse(
+                customerMapper.selectPage(PageHelper.toPage(qry), wrapper),
                 customerAssembler::toDomain
         );
     }

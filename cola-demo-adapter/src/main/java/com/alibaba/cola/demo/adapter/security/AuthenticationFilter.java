@@ -2,6 +2,8 @@ package com.alibaba.cola.demo.adapter.security;
 
 import com.alibaba.cola.demo.client.api.IApiAppService;
 import com.alibaba.cola.demo.client.dto.data.ApiAppDTO;
+import com.alibaba.cola.demo.domain.common.PathMatcher;
+import com.alibaba.cola.demo.domain.common.TokenBlacklist;
 import com.alibaba.cola.dto.SingleResponse;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -91,9 +93,9 @@ public class AuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // 校验路径权限 — 委托给领域逻辑（此处用DTO字段匹配，保持一致性）
+            // 校验路径权限 — 委托给领域PathMatcher工具
             String requestPath = request.getRequestURI();
-            if (!isPathAllowed(apiApp.getAllowedPaths(), requestPath)) {
+            if (!PathMatcher.isPathAllowed(apiApp.getAllowedPaths(), requestPath)) {
                 log.warn("API Key无权访问: appName={}, path={}", apiApp.getAppName(), requestPath);
                 request.setAttribute("authError", "API应用无权访问该路径");
                 return;
@@ -162,37 +164,5 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             return "****";
         }
         return key.substring(0, 4);
-    }
-
-    /**
-     * 路径权限校验
-     * 注意：理想情况下应委托给ApiApp领域对象的isPathAllowed方法，
-     * 但在Filter层仅持有DTO，因此保留此逻辑。
-     * 领域对象和此处的路径匹配算法保持一致。
-     */
-    private boolean isPathAllowed(String allowedPaths, String requestPath) {
-        if (allowedPaths == null || allowedPaths.trim().isEmpty()) {
-            return false;
-        }
-        for (String pattern : allowedPaths.split(",")) {
-            if (matchPath(pattern.trim(), requestPath)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean matchPath(String pattern, String path) {
-        if (!pattern.contains("*")) {
-            return pattern.equals(path);
-        }
-        if (pattern.endsWith("/**")) {
-            return path.startsWith(pattern.substring(0, pattern.length() - 3));
-        }
-        if (pattern.endsWith("/*")) {
-            String prefix = pattern.substring(0, pattern.length() - 2);
-            return path.startsWith(prefix) && !path.substring(prefix.length()).contains("/");
-        }
-        return false;
     }
 }

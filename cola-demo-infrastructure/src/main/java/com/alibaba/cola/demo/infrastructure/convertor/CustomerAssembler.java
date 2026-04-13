@@ -1,7 +1,7 @@
 package com.alibaba.cola.demo.infrastructure.convertor;
 
 import com.alibaba.cola.demo.domain.customer.Customer;
-import com.alibaba.cola.demo.domain.customer.CompanyType;
+import com.alibaba.cola.demo.domain.enums.CompanyType;
 import com.alibaba.cola.demo.infrastructure.dataobject.CustomerEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;

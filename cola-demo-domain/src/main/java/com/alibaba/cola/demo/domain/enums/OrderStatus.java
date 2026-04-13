@@ -1,4 +1,4 @@
-package com.alibaba.cola.demo.domain.order;
+package com.alibaba.cola.demo.domain.enums;
 
 /**
  * 订单状态值对象

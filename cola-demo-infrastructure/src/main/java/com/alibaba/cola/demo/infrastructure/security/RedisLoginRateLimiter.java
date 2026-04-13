@@ -1,5 +1,6 @@
-package com.alibaba.cola.demo.adapter.security;
+package com.alibaba.cola.demo.infrastructure.security;
 
+import com.alibaba.cola.demo.domain.common.LoginRateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RAtomicLong;
@@ -9,13 +10,13 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 登录限流器
+ * 登录限流器实现
  * 基于Redis实现，防止暴力破解
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class LoginRateLimiter {
+public class RedisLoginRateLimiter implements LoginRateLimiter {
 
     private static final String KEY_PREFIX = "ratelimit:login:";
     private static final long MAX_ATTEMPTS = 5;
@@ -24,12 +25,7 @@ public class LoginRateLimiter {
 
     private final RedissonClient redissonClient;
 
-    /**
-     * 检查是否允许登录
-     *
-     * @param username 用户名
-     * @return true=允许，false=被限流
-     */
+    @Override
     public boolean allowLogin(String username) {
         String key = KEY_PREFIX + username;
         RAtomicLong counter = redissonClient.getAtomicLong(key);
@@ -53,17 +49,13 @@ public class LoginRateLimiter {
         return true;
     }
 
-    /**
-     * 登录成功后清除计数
-     */
+    @Override
     public void clearAttempts(String username) {
         String key = KEY_PREFIX + username;
         redissonClient.getAtomicLong(key).delete();
     }
 
-    /**
-     * 获取剩余锁定时间（秒）
-     */
+    @Override
     public long getRemainingLockTime(String username) {
         String key = KEY_PREFIX + username;
         long ttl = redissonClient.getAtomicLong(key).remainTimeToLive();

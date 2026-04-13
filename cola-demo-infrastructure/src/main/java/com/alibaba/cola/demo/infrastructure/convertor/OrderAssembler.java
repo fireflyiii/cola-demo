@@ -1,7 +1,7 @@
 package com.alibaba.cola.demo.infrastructure.convertor;
 
 import com.alibaba.cola.demo.domain.order.Order;
-import com.alibaba.cola.demo.domain.order.OrderStatus;
+import com.alibaba.cola.demo.domain.enums.OrderStatus;
 import com.alibaba.cola.demo.infrastructure.dataobject.OrderEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;

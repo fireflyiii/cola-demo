@@ -1,4 +1,4 @@
-package com.alibaba.cola.demo.domain.customer;
+package com.alibaba.cola.demo.domain.enums;
 
 /**
  * 公司类型值对象

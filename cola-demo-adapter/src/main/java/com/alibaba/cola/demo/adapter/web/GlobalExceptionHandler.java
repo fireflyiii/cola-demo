@@ -1,4 +1,4 @@
-package com.alibaba.cola.demo.adapter.web.handler;
+package com.alibaba.cola.demo.adapter.web;
 
 import com.alibaba.cola.demo.client.common.DomainException;
 import com.alibaba.cola.dto.Response;

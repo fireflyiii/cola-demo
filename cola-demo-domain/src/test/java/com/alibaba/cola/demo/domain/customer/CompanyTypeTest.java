@@ -1,5 +1,6 @@
 package com.alibaba.cola.demo.domain.customer;
 
+import com.alibaba.cola.demo.domain.enums.CompanyType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

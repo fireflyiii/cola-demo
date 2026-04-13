@@ -2,6 +2,8 @@ package com.alibaba.cola.demo.app.service.impl;
 
 import com.alibaba.cola.demo.app.convertor.UserConvertor;
 import com.alibaba.cola.demo.client.api.IAuthService;
+import com.alibaba.cola.demo.client.common.BizErrorCode;
+import com.alibaba.cola.demo.client.common.DomainException;
 import com.alibaba.cola.demo.client.dto.LoginCmd;
 import com.alibaba.cola.demo.client.dto.LoginResponse;
 import com.alibaba.cola.demo.client.dto.data.UserAuthInfoDTO;
@@ -27,26 +29,30 @@ public class AuthServiceImpl implements IAuthService {
     public LoginResponse login(LoginCmd loginCmd, String token, String refreshToken, Long expiresIn) {
         String username = loginCmd.getUsername();
         User user = userGateway.findByUsername(username);
+        if (user == null) {
+            throw new DomainException(BizErrorCode.B_USER_NOT_FOUND);
+        }
         List<String> roles = userGateway.findRoleCodesByUsername(username);
 
         return new LoginResponse(token, expiresIn, "Bearer", refreshToken, userConvertor.toDTO(user, roles));
     }
 
     @Override
-    public LoginResponse refreshToken(String username, String refreshToken) {
+    public LoginResponse refreshToken(String username, String accessToken, String refreshToken, Long expiresIn) {
         User user = userGateway.findByUsername(username);
         if (user == null) {
-            return null;
+            throw new DomainException(BizErrorCode.B_USER_NOT_FOUND);
         }
         List<String> roles = userGateway.findRoleCodesByUsername(username);
-        // 实际的新Token生成由Adapter层完成，此处仅返回用户信息
-        // refreshToken由Controller层重新签发
-        return new LoginResponse(null, null, "Bearer", refreshToken, userConvertor.toDTO(user, roles));
+        return new LoginResponse(accessToken, expiresIn, "Bearer", refreshToken, userConvertor.toDTO(user, roles));
     }
 
     @Override
     public UserDTO getUserInfo(String username) {
         User user = userGateway.findByUsername(username);
+        if (user == null) {
+            throw new DomainException(BizErrorCode.B_USER_NOT_FOUND);
+        }
         List<String> roles = userGateway.findRoleCodesByUsername(username);
         return userConvertor.toDTO(user, roles);
     }
