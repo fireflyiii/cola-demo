@@ -1,6 +1,7 @@
 package com.alibaba.cola.demo.infrastructure.convertor;
 
 import com.alibaba.cola.demo.domain.user.Permission;
+import com.alibaba.cola.demo.domain.user.ResourceType;
 import com.alibaba.cola.demo.infrastructure.dataobject.PermissionEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
@@ -17,16 +18,14 @@ public interface PermissionAssembler {
     PermissionEntity toEntity(Permission permission);
 
     /**
-     * Entity转Domain（使用工厂方法，保留领域校验）
+     * Entity转Domain（使用rebuild方法，从DB加载不触发创建校验）
      */
     default Permission toDomain(PermissionEntity entity) {
         if (entity == null) {
             return null;
         }
-        Permission permission = Permission.create(
-                entity.getPermissionCode(), entity.getPermissionName(),
-                entity.getResourceType(), entity.getResourcePath());
-        permission.setPermissionId(entity.getId());
-        return permission;
+        return Permission.rebuild(entity.getId(), entity.getPermissionCode(), entity.getPermissionName(),
+                entity.getResourceType() != null ? ResourceType.valueOf(entity.getResourceType()) : ResourceType.API,
+                entity.getResourcePath());
     }
 }

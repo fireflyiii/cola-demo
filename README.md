@@ -12,8 +12,8 @@ cola-demo 是一个完整的 COLA 架构示例，展示了如何基于 DDD + CQR
 cola-demo/
 ├── cola-demo-client/              # 客户端层 - 对外暴露接口和DTO定义
 │   ├── api/                       # 服务接口定义 (ICustomerService, IRoleService, IPermissionService, IOrderService, IApiAppService, IAuthService)
-│   ├── dto/                       # Command、Query 对象
-│   │   └── data/                  # DTO 数据传输对象 (CustomerDTO, UserDTO, UserAuthInfoDTO, OrderDTO, ApiAppDTO)
+│   ├── dto/                       # Command、Query 对象 (CustomerPageQry, RolePageQry, PermissionPageQry, ApiAppPageQry 等)
+│   │   └── data/                  # DTO 数据传输对象 (均继承 COLA DTO: CustomerDTO, UserDTO, RoleDTO 等)
 │   └── common/                    # 通用类型 (BizErrorCode, DomainException, PageResult分页工具)
 ├── cola-demo-adapter/             # 适配器层 - REST Controller入口
 │   ├── web/                       # REST API 控制器
@@ -22,7 +22,7 @@ cola-demo/
 │   └── filter/                    # 过滤器 (TraceIdFilter)
 ├── cola-demo-app/                 # 应用层 - Service业务逻辑 + Handler
 │   ├── service/                   # 应用服务 (AuthService)
-│   │   └── impl/                  # 服务实现 (AuthServiceImpl, OrderServiceImpl, ApiAppServiceImpl)
+│   │   └── impl/                  # 服务实现 (CustomerServiceImpl, AuthServiceImpl, OrderServiceImpl, ApiAppServiceImpl, RoleServiceImpl, PermissionServiceImpl)
 │   ├── executor/                  # CQRS Handler（按实体聚合）
 │   ├── eventhandler/              # 领域事件处理器 (CustomerEventHandler, RoleEventHandler)
 │   └── convertor/                 # MapStruct DTO 转换器
@@ -33,7 +33,7 @@ cola-demo/
 │   │   └── gateway/               # 领域网关接口 (OrderGateway)
 │   ├── apiapp/                    # API应用领域 (ApiApp)
 │   │   └── gateway/               # 领域网关接口 (ApiAppGateway)
-│   ├── user/                      # 用户领域 (User, Role, Permission, Password, ResourceType)
+│   ├── user/                      # 用户领域 (User, Role, Permission, Password, ResourceType, RoleCreatedEvent)
 │   │   └── gateway/               # 领域网关接口 (UserGateway, RoleGateway, PermissionGateway)
 │   └── common/                    # 领域通用类 (AggregateRoot, DomainEvent, DomainEventPublisher)
 ├── cola-demo-infrastructure/      # 基础设施层 - Gateway实现 + MyBatis持久化
@@ -75,7 +75,9 @@ start → adapter, infrastructure
 
 **关键约束**：
 - Adapter 层不直接依赖 Domain 层，必须通过 App 层间接访问
+- 所有 DTO 继承 `com.alibaba.cola.dto.DTO`，所有 Cmd 继承 `Command`，查询对象继承 `PageQuery`
 - Domain Gateway 返回 `PageResponse<Domain>`，通过 `PageResult` 工具类自动转换分页参数和结果
+- Controller 分页接口使用 `@PostMapping` + `@RequestBody` 绑定 Qry 对象，JSON Body 传递分页和查询参数
 - 跨层异常契约（如 `DomainException`）放在 Client 层的 `common` 包
 
 ## 技术栈
@@ -132,7 +134,7 @@ cd cola-demo-start && mvn spring-boot:run
 ```
 
 启动成功后访问：
-- API 文档：`http://localhost:8080/swagger-ui.html`
+- API 文档：`http://localhost:8080/swagger-ui/index.html`
 - 健康检查：`http://localhost:8080/actuator/health`
 
 ## 核心设计模式
@@ -145,7 +147,7 @@ cd cola-demo-start && mvn spring-boot:run
 | **值对象** | `CompanyType`, `ResourceType`, `Password` | 不可变，封装领域概念 |
 | **领域事件** | `DomainEvent`, `CustomerCreatedEvent`, `RoleCreatedEvent` | 异步解耦，Spring ApplicationEvent 传递 |
 | **领域异常** | `DomainException` + `BizErrorCode` | 错误码枚举保证一致性 |
-| **网关接口** | `CustomerGateway`, `UserGateway`, `RoleGateway`, `PermissionGateway` | Domain 定义契约，Infrastructure 实现 |
+| **网关接口** | `CustomerGateway`, `UserGateway`, `RoleGateway`, `PermissionGateway`, `OrderGateway`, `ApiAppGateway` | Domain 定义契约，Infrastructure 实现 |
 
 ### CQRS 模式
 
@@ -154,14 +156,24 @@ cd cola-demo-start && mvn spring-boot:run
 | Handler | 方法 | 事务 |
 |---------|------|------|
 | `CustomerHandler` | add, listByName, page | 写: `@Transactional(rollbackFor)`, 读: `@Transactional(readOnly=true)` |
-| `RoleHandler` | add, list, assignToUser, removeFromUser | 同上 |
-| `PermissionHandler` | add, list, assignToRole, removeFromRole | 同上 |
+| `RoleHandler` | add, list, page, assignToUser, removeFromUser | 同上 |
+| `PermissionHandler` | add, list, page, assignToRole, removeFromRole | 同上 |
+| `OrderHandler` | add, listByName | 同上 |
+| `ApiAppHandler` | add, list, page, getByApiKey | 同上 |
 
 事务统一在 App 层 Handler 中管理，Domain 层和 Infrastructure 层不使用事务注解。
 
 ### 分页查询
 
-`PageResult`（client/common）是纯工具类，提供三个静态方法覆盖分页全链路：
+基于 COLA 原生 `PageQuery` / `PageResponse` 体系，通过 `PageResult` 工具类桥接 MyBatis-Plus，实现分页全链路统一。
+
+**设计原则**：
+- 查询对象直接继承 COLA `PageQuery`（含 pageIndex、pageSize、orderBy 等分页参数），只添加业务查询字段
+- Controller 使用 `@PostMapping` + `@RequestBody` 接收 Qry 对象，JSON Body 传递分页和查询参数
+- Infrastructure 层使用 `PageResult` 一步完成 IPage → PageResponse 转换
+- App 层使用 `PageResult.map` 一行完成 Domain → DTO 映射
+
+**PageResult 工具类**（client/common）仅 3 个静态方法：
 
 | 方法 | 作用 | 使用层 |
 |------|------|--------|
@@ -169,7 +181,35 @@ cd cola-demo-start && mvn spring-boot:run
 | `toPageResponse(IPage, Function)` | IPage → PageResponse（同时转换记录类型） | Infrastructure |
 | `map(PageResponse, Function)` | PageResponse\<T\> → PageResponse\<R\> | App |
 
-Gateway 直接返回 `PageResponse<Domain>`，无需中间数据对象。Infrastructure 层一步完成 IPage → PageResponse，App 层一行完成 Domain → DTO 映射。
+**数据流**：
+
+```
+Controller (@PostMapping + @RequestBody Qry) → App (PageResult.map) → Gateway → Infrastructure (PageResult.toPageResponse + PageResult.toPage)
+```
+
+**示例代码**：
+
+```java
+// 查询对象 — 继承 PageQuery，只定义业务字段
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class RolePageQry extends PageQuery {
+    private String roleName;
+    private Integer status;
+}
+```
+
+### DTO/Cmd 规范
+
+所有客户端传输对象统一继承 COLA 基类，保持架构一致性：
+
+| 类型 | 基类 | 示例 |
+|------|------|------|
+| 写操作命令 | `Command extends DTO` | `LoginCmd`, `RoleAddCmd`, `CustomerAddCmd` |
+| 分页查询 | `PageQuery extends Query extends Command` | `CustomerPageQry`, `RolePageQry` |
+| 数据传输 | `DTO` | `CustomerDTO`, `RoleDTO`, `UserDTO` |
+
+COLA 的 `DTO` 抽象类实现 `Serializable`，继承它可自动获得序列化支持并语义明确地标识传输对象类型。
 
 ### MapStruct 对象映射
 
@@ -293,8 +333,10 @@ curl -X POST http://localhost:8080/customer/add \
 # 查询客户列表
 curl "http://localhost:8080/customer/list?customerName=阿里" -H "Authorization: Bearer {token}"
 
-# 分页查询客户
-curl "http://localhost:8080/customer/page?pageIndex=1&pageSize=10&customerName=阿里" -H "Authorization: Bearer {token}"
+# 分页查询客户（POST + JSON Body，框架自动处理分页参数）
+curl -X POST http://localhost:8080/customer/page \
+  -H "Content-Type: application/json" -H "Authorization: Bearer {token}" \
+  -d '{"pageIndex":1, "pageSize":10, "customerName":"阿里"}'
 ```
 
 ### 角色管理接口
@@ -307,6 +349,21 @@ curl -X POST http://localhost:8080/role/add \
 
 # 查询角色列表
 curl "http://localhost:8080/role/list" -H "Authorization: Bearer {token}"
+
+# 分页查询角色（POST + JSON Body，支持业务条件筛选）
+curl -X POST http://localhost:8080/role/page \
+  -H "Content-Type: application/json" -H "Authorization: Bearer {token}" \
+  -d '{"pageIndex":1, "pageSize":10, "roleName":"管理", "status":1}'
+
+# 分配角色给用户
+curl -X POST http://localhost:8080/role/assignToUser \
+  -H "Content-Type: application/json" -H "Authorization: Bearer {token}" \
+  -d '{"userId":1,"roleCode":"ADMIN"}'
+
+# 移除用户角色
+curl -X DELETE http://localhost:8080/role/removeFromUser \
+  -H "Content-Type: application/json" -H "Authorization: Bearer {token}" \
+  -d '{"userId":1,"roleCode":"ADMIN"}'
 ```
 
 ### 权限管理接口
@@ -319,6 +376,21 @@ curl -X POST http://localhost:8080/permission/add \
 
 # 查询权限列表
 curl "http://localhost:8080/permission/list" -H "Authorization: Bearer {token}"
+
+# 分页查询权限
+curl -X POST http://localhost:8080/permission/page \
+  -H "Content-Type: application/json" -H "Authorization: Bearer {token}" \
+  -d '{"pageIndex":1, "pageSize":10, "permissionName":"查看", "resourceType":"MENU"}'
+
+# 分配权限给角色
+curl -X POST http://localhost:8080/permission/assignToRole \
+  -H "Content-Type: application/json" -H "Authorization: Bearer {token}" \
+  -d '{"roleCode":"ADMIN","permissionCode":"CUSTOMER_VIEW"}'
+
+# 移除角色权限
+curl -X DELETE http://localhost:8080/permission/removeFromRole \
+  -H "Content-Type: application/json" -H "Authorization: Bearer {token}" \
+  -d '{"roleCode":"ADMIN","permissionCode":"CUSTOMER_VIEW"}'
 ```
 
 ### 订单管理接口
@@ -347,15 +419,21 @@ curl -X POST http://localhost:8080/api-app/add \
 
 # 查询API应用列表
 curl "http://localhost:8080/api-app/list" -H "Authorization: Bearer {token}"
+
+# 分页查询API应用
+curl -X POST http://localhost:8080/api-app/page \
+  -H "Content-Type: application/json" -H "Authorization: Bearer {token}" \
+  -d '{"pageIndex":1, "pageSize":10, "appName":"订单"}'
 ```
 
 ## 项目亮点
 
 - **严格分层**: Adapter 不直接依赖 Domain，通过 App 层间接访问
+- **COLA 规范**: DTO/Cmd/PageQuery 统一继承 COLA 基类，架构一致性强
 - **CQRS 模式**: 按实体聚合 Handler，Command 和 Query 分离，写操作发布领域事件
 - **DDD 战术模式**: 聚合根、值对象、领域事件、领域异常、网关接口
 - **MapStruct 自动映射**: 编译期生成转换代码，Spring 注入，零样板代码
-- **分页全链路转换**: PageResult 工具类三步覆盖，Gateway 直接返回 PageResponse
+- **分页全链路统一**: 基于 COLA PageQuery/PageResponse，PageResult 3 个方法覆盖全链路，Controller 自动绑定分页参数
 - **错误码一致性**: BizErrorCode 枚举 + DomainException + 全局异常处理
 - **JWT 认证**: Spring Security 6 Lambda DSL + 无状态认证
 - **API Key 认证**: 支持第三方系统通过 API Key 访问，路径权限控制，统一认证过滤器

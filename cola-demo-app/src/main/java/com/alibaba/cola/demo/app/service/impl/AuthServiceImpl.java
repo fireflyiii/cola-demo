@@ -24,12 +24,24 @@ public class AuthServiceImpl implements IAuthService {
     private final UserConvertor userConvertor;
 
     @Override
-    public LoginResponse login(LoginCmd loginCmd, String token, Long expiresIn) {
+    public LoginResponse login(LoginCmd loginCmd, String token, String refreshToken, Long expiresIn) {
         String username = loginCmd.getUsername();
         User user = userGateway.findByUsername(username);
         List<String> roles = userGateway.findRoleCodesByUsername(username);
 
-        return new LoginResponse(token, expiresIn, "Bearer", userConvertor.toDTO(user, roles));
+        return new LoginResponse(token, expiresIn, "Bearer", refreshToken, userConvertor.toDTO(user, roles));
+    }
+
+    @Override
+    public LoginResponse refreshToken(String username, String refreshToken) {
+        User user = userGateway.findByUsername(username);
+        if (user == null) {
+            return null;
+        }
+        List<String> roles = userGateway.findRoleCodesByUsername(username);
+        // 实际的新Token生成由Adapter层完成，此处仅返回用户信息
+        // refreshToken由Controller层重新签发
+        return new LoginResponse(null, null, "Bearer", refreshToken, userConvertor.toDTO(user, roles));
     }
 
     @Override

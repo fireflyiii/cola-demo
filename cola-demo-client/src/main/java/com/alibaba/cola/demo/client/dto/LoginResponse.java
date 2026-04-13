@@ -17,13 +17,15 @@ public class LoginResponse {
     private String token;
     private Long expiresIn;
     private String tokenType;
+    private String refreshToken;
     private UserDTO user;
 
-    public LoginResponse(String token, Long expiresIn, String tokenType, UserDTO user) {
+    public LoginResponse(String token, Long expiresIn, String tokenType, String refreshToken, UserDTO user) {
         this.success = true;
         this.token = token;
         this.expiresIn = expiresIn;
         this.tokenType = tokenType;
+        this.refreshToken = refreshToken;
         this.user = user;
     }
 }

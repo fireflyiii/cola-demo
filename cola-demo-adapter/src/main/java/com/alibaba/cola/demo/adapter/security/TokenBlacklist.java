@@ -1,51 +1,47 @@
 package com.alibaba.cola.demo.adapter.security;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 /**
  * JWT Token黑名单
- * 用于登出时使Token失效
+ * 基于Redis实现，支持分布式部署，Token到期自动过期
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class TokenBlacklist {
 
-    private final ConcurrentHashMap<String, Long> blacklist = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private static final String KEY_PREFIX = "token:blacklist:";
 
-    public TokenBlacklist() {
-        // 每分钟清理过期的黑名单条目
-        scheduler.scheduleAtFixedRate(this::cleanup, 1, 1, TimeUnit.MINUTES);
-    }
+    private final RedissonClient redissonClient;
 
     /**
      * 将Token加入黑名单
+     *
+     * @param token           JWT Token
+     * @param remainingSeconds 剩余有效时间（秒）
      */
-    public void add(String token, long expireAtMillis) {
-        blacklist.put(token, expireAtMillis);
+    public void add(String token, long remainingSeconds) {
+        if (remainingSeconds <= 0) {
+            return;
+        }
+        String key = KEY_PREFIX + token;
+        RBucket<String> bucket = redissonClient.getBucket(key);
+        bucket.set("1", Duration.ofSeconds(remainingSeconds));
+        log.debug("Token added to blacklist, expires in {}s", remainingSeconds);
     }
 
     /**
      * 检查Token是否在黑名单中
      */
     public boolean contains(String token) {
-        Long expireAt = blacklist.get(token);
-        if (expireAt == null) {
-            return false;
-        }
-        if (System.currentTimeMillis() > expireAt) {
-            blacklist.remove(token);
-            return false;
-        }
-        return true;
-    }
-
-    private void cleanup() {
-        long now = System.currentTimeMillis();
-        blacklist.entrySet().removeIf(entry -> now > entry.getValue());
+        String key = KEY_PREFIX + token;
+        return redissonClient.getBucket(key).isExists();
     }
 }

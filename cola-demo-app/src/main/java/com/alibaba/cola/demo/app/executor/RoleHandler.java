@@ -1,7 +1,9 @@
 package com.alibaba.cola.demo.app.executor;
 
 import com.alibaba.cola.demo.app.convertor.RoleConvertor;
+import com.alibaba.cola.demo.client.common.PageResult;
 import com.alibaba.cola.demo.client.dto.RoleAddCmd;
+import com.alibaba.cola.demo.client.dto.RolePageQry;
 import com.alibaba.cola.demo.client.dto.UserRoleAssignCmd;
 import com.alibaba.cola.demo.client.dto.data.RoleDTO;
 import com.alibaba.cola.demo.domain.common.DomainEventPublisher;
@@ -9,6 +11,7 @@ import com.alibaba.cola.demo.domain.user.Role;
 import com.alibaba.cola.demo.domain.user.RoleCreatedEvent;
 import com.alibaba.cola.demo.domain.user.gateway.RoleGateway;
 import com.alibaba.cola.dto.MultiResponse;
+import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.dto.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -52,5 +55,10 @@ public class RoleHandler {
     public Response removeFromUser(Long userId, Long roleId) {
         roleGateway.removeRoleFromUser(userId, roleId);
         return Response.buildSuccess();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<RoleDTO> page(RolePageQry qry) {
+        return PageResult.map(roleGateway.page(qry), roleConvertor::toDTO);
     }
 }

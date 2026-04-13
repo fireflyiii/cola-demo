@@ -2,9 +2,11 @@ package com.alibaba.cola.demo.adapter.web;
 
 import com.alibaba.cola.demo.client.api.IRoleService;
 import com.alibaba.cola.demo.client.dto.RoleAddCmd;
+import com.alibaba.cola.demo.client.dto.RolePageQry;
 import com.alibaba.cola.demo.client.dto.UserRoleAssignCmd;
 import com.alibaba.cola.demo.client.dto.data.RoleDTO;
 import com.alibaba.cola.dto.MultiResponse;
+import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.dto.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +19,7 @@ import jakarta.validation.Valid;
  */
 @Slf4j
 @RestController
-@RequestMapping("/role")
+@RequestMapping("/api/v1/role")
 @RequiredArgsConstructor
 public class RoleController {
 
@@ -38,6 +40,16 @@ public class RoleController {
     @GetMapping("/list")
     public MultiResponse<RoleDTO> listRoles() {
         return roleService.listRoles();
+    }
+
+    /**
+     * 分页查询角色
+     */
+    @PostMapping("/page")
+    public PageResponse<RoleDTO> pageRoles(@RequestBody RolePageQry qry) {
+        log.info("分页查询角色请求: roleName={}, status={}, pageIndex={}, pageSize={}",
+                qry.getRoleName(), qry.getStatus(), qry.getPageIndex(), qry.getPageSize());
+        return roleService.pageRoles(qry);
     }
 
     /**

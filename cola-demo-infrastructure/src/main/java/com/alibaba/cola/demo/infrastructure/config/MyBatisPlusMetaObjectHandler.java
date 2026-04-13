@@ -3,6 +3,8 @@ package com.alibaba.cola.demo.infrastructure.config;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -22,35 +24,34 @@ public class MyBatisPlusMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void insertFill(MetaObject metaObject) {
-        log.debug("Start insert fill for metaObject: {}", metaObject.getOriginalObject().getClass().getSimpleName());
-
-        // 填充创建人
-        strictInsertFill(metaObject, CREATED_BY, String.class, getCurrentUsername());
-        // 填充创建时间
+        String currentUser = getCurrentUsername();
+        strictInsertFill(metaObject, CREATED_BY, String.class, currentUser);
         strictInsertFill(metaObject, CREATED_TIME, LocalDateTime.class, LocalDateTime.now());
-        // 填充更新人
-        strictInsertFill(metaObject, UPDATED_BY, String.class, getCurrentUsername());
-        // 填充更新时间
+        strictInsertFill(metaObject, UPDATED_BY, String.class, currentUser);
         strictInsertFill(metaObject, UPDATED_TIME, LocalDateTime.class, LocalDateTime.now());
     }
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        log.debug("Start update fill for metaObject: {}", metaObject.getOriginalObject().getClass().getSimpleName());
-
-        // 填充更新人
-        strictUpdateFill(metaObject, UPDATED_BY, String.class, getCurrentUsername());
-        // 填充更新时间
+        String currentUser = getCurrentUsername();
+        strictUpdateFill(metaObject, UPDATED_BY, String.class, currentUser);
         strictUpdateFill(metaObject, UPDATED_TIME, LocalDateTime.class, LocalDateTime.now());
     }
 
     /**
      * 获取当前登录用户名
-     * 注意：如果需要从SecurityContext获取用户名，adapter层注入UserDetailsService获取
+     * 从SecurityContext获取，未登录时使用"system"
      */
-    protected String getCurrentUsername() {
-        // 简单实现，未登录时使用system
-        // 实际项目中可以通过ThreadLocal或其他方式传递当前用户
+    private String getCurrentUsername() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()
+                    && !"anonymousUser".equals(authentication.getPrincipal())) {
+                return authentication.getName();
+            }
+        } catch (Exception e) {
+            log.debug("Failed to get current username from SecurityContext", e);
+        }
         return "system";
     }
 }

@@ -3,10 +3,11 @@ package com.alibaba.cola.demo.adapter.security;
 import com.alibaba.cola.demo.client.api.IApiAppService;
 import com.alibaba.cola.demo.client.dto.data.ApiAppDTO;
 import com.alibaba.cola.dto.SingleResponse;
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,7 +22,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -35,6 +36,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthenticationFilter extends OncePerRequestFilter {
 
+    private static final String HEADER_API_KEY = "X-API-Key";
+    private static final String HEADER_AUTHORIZATION = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private final IApiAppService apiAppService;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
@@ -43,13 +48,16 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        // 优先尝试 API Key 认证
-        if (tryApiKeyAuthentication(request)) {
+        String apiKey = request.getHeader(HEADER_API_KEY);
+
+        // 如果提供了 API Key，仅尝试 API Key 认证
+        if (StringUtils.hasText(apiKey)) {
+            tryApiKeyAuthentication(request, apiKey);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 其次尝试 JWT 认证
+        // 否则尝试 JWT 认证
         tryJwtAuthentication(request);
 
         filterChain.doFilter(request, response);
@@ -58,18 +66,13 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     /**
      * API Key 认证
      */
-    private boolean tryApiKeyAuthentication(HttpServletRequest request) {
-        String apiKey = request.getHeader("X-API-Key");
-        if (!StringUtils.hasText(apiKey)) {
-            return false;
-        }
-
+    private void tryApiKeyAuthentication(HttpServletRequest request, String apiKey) {
         try {
             SingleResponse<ApiAppDTO> apiAppResponse = apiAppService.getByApiKey(apiKey);
             if (!apiAppResponse.isSuccess() || apiAppResponse.getData() == null) {
-                log.warn("Invalid API Key: {}***", apiKey.substring(0, Math.min(apiKey.length(), 10)));
+                log.warn("Invalid API Key: {}****", maskKey(apiKey));
                 request.setAttribute("authError", "API Key无效");
-                return false;
+                return;
             }
 
             ApiAppDTO apiApp = apiAppResponse.getData();
@@ -78,37 +81,36 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             if (apiApp.getStatus() == null || apiApp.getStatus() != 1) {
                 log.warn("API Key应用已禁用: appName={}", apiApp.getAppName());
                 request.setAttribute("authError", "API应用已禁用");
-                return false;
+                return;
             }
 
             // 校验过期
-            if (apiApp.getExpiresAt() != null && apiApp.getExpiresAt().isBefore(LocalDateTime.now())) {
+            if (apiApp.getExpiresAt() != null && apiApp.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
                 log.warn("API Key应用已过期: appName={}", apiApp.getAppName());
                 request.setAttribute("authError", "API应用已过期");
-                return false;
+                return;
             }
 
-            // 校验路径权限
+            // 校验路径权限 — 委托给领域逻辑（此处用DTO字段匹配，保持一致性）
             String requestPath = request.getRequestURI();
             if (!isPathAllowed(apiApp.getAllowedPaths(), requestPath)) {
                 log.warn("API Key无权访问: appName={}, path={}", apiApp.getAppName(), requestPath);
                 request.setAttribute("authError", "API应用无权访问该路径");
-                return false;
+                return;
             }
 
             // 设置认证
-            setAuthentication(apiApp.getAppName(), List.of(new SimpleGrantedAuthority("ROLE_API")), request);
+            setAuthentication(apiApp.getAppName(),
+                    List.of(new SimpleGrantedAuthority("ROLE_API")), request);
             log.debug("API Key认证成功: appName={}, path={}", apiApp.getAppName(), requestPath);
-            return true;
         } catch (Exception ex) {
             log.error("API Key认证异常", ex);
             request.setAttribute("authError", "API Key认证失败");
-            return false;
         }
     }
 
     /**
-     * JWT 认证
+     * JWT 认证（单次解析优化）
      */
     private void tryJwtAuthentication(HttpServletRequest request) {
         String jwt = extractJwt(request);
@@ -116,47 +118,58 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        try {
-            if (jwtTokenProvider.validateToken(jwt)) {
-                if (tokenBlacklist.contains(jwt)) {
-                    log.debug("Token已注销");
-                    request.setAttribute("authError", "Token已被注销");
-                    return;
-                }
-                String username = jwtTokenProvider.getUsernameFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                setAuthentication(userDetails.getUsername(), userDetails.getAuthorities(), request);
-                log.debug("JWT认证成功: user={}", username);
-            } else {
-                log.debug("Token校验失败");
-                request.setAttribute("authError", "Token无效或已过期");
-            }
-        } catch (ExpiredJwtException ex) {
-            log.debug("Token已过期: {}", ex.getMessage());
-            request.setAttribute("authError", "Token已过期，请重新登录");
-        } catch (Exception ex) {
-            log.error("JWT认证异常", ex);
-            request.setAttribute("authError", "认证失败");
+        // 单次解析JWT，获取Claims
+        Claims claims = jwtTokenProvider.parseToken(jwt);
+        if (claims == null) {
+            log.debug("Token校验失败");
+            request.setAttribute("authError", "Token无效或已过期");
+            return;
         }
+
+        if (tokenBlacklist.contains(jwt)) {
+            log.debug("Token已注销");
+            request.setAttribute("authError", "Token已被注销");
+            return;
+        }
+
+        String username = claims.getSubject();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        setAuthentication(userDetails.getUsername(), userDetails.getAuthorities(), request);
+        log.debug("JWT认证成功: user={}", username);
     }
 
-    private void setAuthentication(String principal, Object authorities, HttpServletRequest request) {
+    private void setAuthentication(String principal, Collection<? extends GrantedAuthority> authorities,
+                                   HttpServletRequest request) {
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(principal, null,
-                        authorities instanceof java.util.Collection ? (java.util.Collection<? extends org.springframework.security.core.GrantedAuthority>) authorities
-                                : List.of());
+                new UsernamePasswordAuthenticationToken(principal, null, authorities);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     private String extractJwt(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        String bearerToken = request.getHeader(HEADER_AUTHORIZATION);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
+            return bearerToken.substring(BEARER_PREFIX.length());
         }
         return null;
     }
 
+    /**
+     * 掩码API Key，仅显示前4位
+     */
+    private String maskKey(String key) {
+        if (key == null || key.length() <= 4) {
+            return "****";
+        }
+        return key.substring(0, 4);
+    }
+
+    /**
+     * 路径权限校验
+     * 注意：理想情况下应委托给ApiApp领域对象的isPathAllowed方法，
+     * 但在Filter层仅持有DTO，因此保留此逻辑。
+     * 领域对象和此处的路径匹配算法保持一致。
+     */
     private boolean isPathAllowed(String allowedPaths, String requestPath) {
         if (allowedPaths == null || allowedPaths.trim().isEmpty()) {
             return false;

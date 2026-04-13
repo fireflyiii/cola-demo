@@ -1,0 +1,57 @@
+      @PostMapping("dictionaries/data")
+        public PageResponse<List<DictionaryDataVo>> paginateSelectDictionaryData(@RequestBody @Valid DictionaryDataQuery query) {
+            return iDictionaryService.paginateSelectDictionaryData(query);
+        }
+
+    @Override
+    public PageResponse<List<DictionaryDataVo>> paginateSelectDictionaryData(DictionaryDataQuery query) {
+        IPage< DictionaryDataVo > result = dictionaryDataMapper.paginateSelectDictionaryData(PageParamConverter.pageParamToPage(query), query, query.getCodeValue(), query.getCodeValueName());
+        return PageResponse.success(result.getRecords(), PageParamConverter.pageToPageParam(result));
+    }
+
+    public class DictionaryDataQuery  extends BaseQuery {
+
+    }
+
+    @Data
+    public class BaseQuery extends BaseReqParam {
+
+    }
+
+    @Data
+    public class BaseReqParam {
+    	@Valid
+    	private PageParam pageParam = new PageParam();
+
+	    public String getTraceId() {
+		    return TraceUtil.getTraceId();
+	    }
+    }
+
+@UtilityClass
+public final class PageParamConverter {
+
+    public static <T> IPage<T> pageParamToPage(BaseReqParam query) {
+
+        FrameworkExceptionEnum.PAGE_PARAM_NOT_NULL.assertNotNull(query);
+        FrameworkExceptionEnum.PAGE_PARAM_NOT_NULL.assertNotNull(query.getPageParam());
+
+        PageParam pageParam = query.getPageParam();
+
+        return new Page<T>().setPages(pageParam.getPages()).setCurrent(pageParam.getCurrentPage()).setSize(pageParam.getPageSize()).setTotal(pageParam.getTotalNum());
+
+    }
+
+    public static PageParam pageToPageParam(@SuppressWarnings("rawtypes") IPage data) {
+
+        FrameworkExceptionEnum.PAGE_PARAM_NOT_NULL.assertNotNull(data);
+        return new PageParam().setCurrentPage(data.getCurrent()).setPages(data.getPages()).setTotalNum(data.getTotal()).setPageSize(data.getSize());
+
+    }
+
+}
+
+public interface DictionaryDataMapper extends IBaseMapper<DictionaryDataEntity> {
+    @Select({"<script>select parent.*, child.`language`,child.`code_value_name` from `tm_dictionary_data` parent inner join `tm_dictionary_data_i18n` child on parent.`id` = child.`parentid` <if test = 'query.parentid != null'> and parent.`parentid`=#{query.parentid}</if><if test = 'query.codeValue != null and query.codeValue != \"\"'> and parent.`code_value` like CONCAT('%',#{codeValue},'%')</if><if test = 'query.codeValueName != null and query.codeValueName != \"\"'> and child.`code_value_name` like CONCAT('%',#{codeValueName},'%')</if> and child.language =#{query.language} and parent.`deleted` = '0' and child.`deleted` = '0' order by parent.`sortid`</script>"})
+    IPage<DictionaryDataVo> paginateSelectDictionaryData(IPage<DictionaryDataVo> page, @Param("query") DictionaryDataQuery query, String codeValue, String codeValueName);
+}

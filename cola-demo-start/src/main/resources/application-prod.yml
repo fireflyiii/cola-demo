@@ -8,6 +8,17 @@ spring:
       minimum-idle: 10
       maximum-pool-size: 50
 
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:true}
+      timeout: ${REDIS_TIMEOUT:3000ms}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:3000ms}
+
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl

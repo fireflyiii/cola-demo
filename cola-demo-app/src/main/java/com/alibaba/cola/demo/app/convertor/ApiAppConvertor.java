@@ -10,5 +10,8 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface ApiAppConvertor {
 
+    /**
+     * Domain -> DTO
+     */
     ApiAppDTO toDTO(ApiApp apiApp);
 }

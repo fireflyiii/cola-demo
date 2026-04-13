@@ -1,11 +1,14 @@
 package com.alibaba.cola.demo.client.dto.data;
 
+import com.alibaba.cola.dto.DTO;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Data
-public class ApiAppDTO {
+@EqualsAndHashCode(callSuper = true)
+public class ApiAppDTO extends DTO {
 
     private Long id;
     private String appName;

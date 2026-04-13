@@ -5,6 +5,17 @@ spring:
     username: ${DB_USERNAME:cola}
     password: ${DB_PASSWORD:1qaz2wsx3edc}
 
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      # password: ${REDIS_PASSWORD:}  # Redis服务器未设置密码，注释掉此行
+      database: ${REDIS_DATABASE:0}
+      ssl:
+        enabled: false
+      timeout: 3000ms
+      connect-timeout: 3000ms
+
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
@@ -21,6 +32,6 @@ management:
     db:
       enabled: true
 
-# JWT配置（开发环境使用默认密钥）
+# JWT配置（开发环境使用默认密钥，生产环境必须通过环境变量设置）
 jwt:
-  secret: ${JWT_SECRET:ColaDemoSecretKeyForJWTTokenGeneration2024MustBeLongEnoughForHS512}
+  secret: ${JWT_SECRET:ColaDemoSecretKeyForJWTTokenGeneration2024MustBeLongEnoughForHS512DevOnly}

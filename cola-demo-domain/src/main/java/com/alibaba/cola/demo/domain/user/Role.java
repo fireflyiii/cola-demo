@@ -30,14 +30,26 @@ public class Role implements AggregateRoot {
     }
 
     /**
+     * 重建角色实体（由Assembler从持久化层加载时使用）
+     */
+    public static Role rebuild(Long roleId, String roleCode, String roleName, Integer status) {
+        Role role = new Role();
+        role.roleId = roleId;
+        role.roleCode = roleCode;
+        role.roleName = roleName;
+        role.status = status;
+        return role;
+    }
+
+    /**
      * 领域行为：校验角色信息
      */
     public void validate() {
         if (roleCode == null || roleCode.trim().isEmpty()) {
-              throw new DomainException(BizErrorCode.B_ROLE_CODE_NOT_BLANK);
-          }
-          if (roleName == null || roleName.trim().isEmpty()) {
-              throw new DomainException(BizErrorCode.B_ROLE_NAME_NOT_BLANK);
+            throw new DomainException(BizErrorCode.B_ROLE_CODE_NOT_BLANK);
+        }
+        if (roleName == null || roleName.trim().isEmpty()) {
+            throw new DomainException(BizErrorCode.B_ROLE_NAME_NOT_BLANK);
         }
     }
 
@@ -48,6 +60,9 @@ public class Role implements AggregateRoot {
         return this.status != null && this.status == 1;
     }
 
+    /**
+     * 设置角色ID（由Gateway在持久化后回填主键）
+     */
     public void setRoleId(Long roleId) {
         this.roleId = roleId;
     }

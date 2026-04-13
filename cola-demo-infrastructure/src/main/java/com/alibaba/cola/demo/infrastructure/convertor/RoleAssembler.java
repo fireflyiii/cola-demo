@@ -17,14 +17,12 @@ public interface RoleAssembler {
     RoleEntity toEntity(Role role);
 
     /**
-     * Entity转Domain（使用工厂方法，保留领域校验）
+     * Entity转Domain（使用rebuild方法，从DB加载不触发创建校验）
      */
     default Role toDomain(RoleEntity entity) {
         if (entity == null) {
             return null;
         }
-        Role role = Role.create(entity.getRoleCode(), entity.getRoleName());
-        role.setRoleId(entity.getId());
-        return role;
+        return Role.rebuild(entity.getId(), entity.getRoleCode(), entity.getRoleName(), entity.getStatus());
     }
 }

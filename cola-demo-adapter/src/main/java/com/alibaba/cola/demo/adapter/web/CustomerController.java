@@ -16,7 +16,7 @@ import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
-@RequestMapping("/customer")
+@RequestMapping("/api/v1/customer")
 @RequiredArgsConstructor
 public class CustomerController {
 
@@ -45,8 +45,8 @@ public class CustomerController {
     /**
      * 分页查询客户列表
      */
-    @GetMapping("/page")
-    public PageResponse<CustomerDTO> page(@ModelAttribute CustomerPageQry qry) {
+    @PostMapping("/page")
+    public PageResponse<CustomerDTO> page(@RequestBody CustomerPageQry qry) {
         log.info("分页查询客户请求: customerName={}, pageIndex={}, pageSize={}",
                 qry.getCustomerName(), qry.getPageIndex(), qry.getPageSize());
         return customerService.page(qry);

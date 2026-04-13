@@ -27,29 +27,25 @@ class CustomerTest {
     }
 
     @Test
-    void shouldSetCustomerId() {
-        Customer customer = Customer.create("张三", "PRIVATE");
-        customer.setCustomerId(1L);
+    void shouldRebuildCustomerWithId() {
+        Customer customer = Customer.rebuild(1L, "张三", CompanyType.PRIVATE);
 
         assertEquals(1L, customer.getCustomerId());
+        assertEquals("张三", customer.getCustomerName());
     }
 
     @Test
     void shouldBeSameCustomerWhenIdEquals() {
-        Customer c1 = Customer.create("张三", "PRIVATE");
-        c1.setCustomerId(1L);
-        Customer c2 = Customer.create("李四", "STATE_OWNED");
-        c2.setCustomerId(1L);
+        Customer c1 = Customer.rebuild(1L, "张三", CompanyType.PRIVATE);
+        Customer c2 = Customer.rebuild(1L, "李四", CompanyType.STATE_OWNED);
 
         assertTrue(c1.isSameCustomer(c2));
     }
 
     @Test
     void shouldNotBeSameCustomerWhenIdDiffers() {
-        Customer c1 = Customer.create("张三", "PRIVATE");
-        c1.setCustomerId(1L);
-        Customer c2 = Customer.create("张三", "PRIVATE");
-        c2.setCustomerId(2L);
+        Customer c1 = Customer.rebuild(1L, "张三", CompanyType.PRIVATE);
+        Customer c2 = Customer.rebuild(2L, "张三", CompanyType.PRIVATE);
 
         assertFalse(c1.isSameCustomer(c2));
     }

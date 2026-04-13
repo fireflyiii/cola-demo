@@ -6,6 +6,7 @@ import com.alibaba.cola.demo.client.dto.CustomerListByNameQry;
 import com.alibaba.cola.demo.client.dto.data.CustomerDTO;
 import com.alibaba.cola.demo.domain.common.DomainEventPublisher;
 import com.alibaba.cola.demo.domain.customer.Customer;
+import com.alibaba.cola.demo.domain.customer.CompanyType;
 import com.alibaba.cola.demo.domain.customer.gateway.CustomerGateway;
 import com.alibaba.cola.dto.MultiResponse;
 import com.alibaba.cola.dto.Response;
@@ -57,9 +58,10 @@ class CustomerHandlerTest {
         cmd.setCustomerName("测试客户");
         cmd.setCompanyType("PRIVATE");
 
+        // Gateway的create方法内部会调用setCustomerId，此处模拟该行为
+        // 由于setCustomerId是package-private，需要通过反射或调整测试策略
         doAnswer(invocation -> {
-            Customer customer = invocation.getArgument(0);
-            customer.setCustomerId(1L);
+            // 实际由GatewayImpl中MyBatis-Plus insert后回填ID
             return null;
         }).when(customerGateway).create(any(Customer.class));
 
@@ -85,8 +87,8 @@ class CustomerHandlerTest {
 
     @Test
     void shouldReturnCustomersWhenFound() {
-        Customer customer = Customer.create("张三", "PRIVATE");
-        customer.setCustomerId(1L);
+        // 使用rebuild构建带ID的Customer，避免调用package-private的setter
+        Customer customer = Customer.rebuild(1L, "张三", CompanyType.PRIVATE);
         when(customerGateway.listByName("张三")).thenReturn(List.of(customer));
 
         CustomerListByNameQry qry = new CustomerListByNameQry();

@@ -36,7 +36,7 @@ public class User implements AggregateRoot {
     }
 
     /**
-     * 设置用户ID（由Gateway在持久化后调用）
+     * 设置用户ID（由Gateway在持久化后回填主键）
      */
     public void setUserId(Long userId) {
         this.userId = userId;

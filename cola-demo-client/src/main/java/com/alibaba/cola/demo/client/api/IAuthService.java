@@ -13,7 +13,12 @@ public interface IAuthService {
     /**
      * 用户登录
      */
-    LoginResponse login(LoginCmd loginCmd, String token, Long expiresIn);
+    LoginResponse login(LoginCmd loginCmd, String token, String refreshToken, Long expiresIn);
+
+    /**
+     * 刷新Token
+     */
+    LoginResponse refreshToken(String username, String refreshToken);
 
     /**
      * 根据用户名获取用户信息

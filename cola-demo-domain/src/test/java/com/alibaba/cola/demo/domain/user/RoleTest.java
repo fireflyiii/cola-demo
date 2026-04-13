@@ -32,10 +32,22 @@ class RoleTest {
     }
 
     @Test
+    void shouldRebuildRoleWithStatus() {
+        Role role = Role.rebuild(1L, "ADMIN", "管理员", 1);
+
+        assertEquals(1L, role.getRoleId());
+        assertTrue(role.isEnabled());
+    }
+
+    @Test
     void shouldBeEnabledWhenStatusIsOne() {
-        Role role = Role.create("ADMIN", "管理员");
-        role.setRoleId(1L);
-        // Role created via factory doesn't set status, so isEnabled returns false
+        Role role = Role.rebuild(1L, "ADMIN", "管理员", 1);
+        assertTrue(role.isEnabled());
+    }
+
+    @Test
+    void shouldNotBeEnabledWhenStatusIsZero() {
+        Role role = Role.rebuild(1L, "ADMIN", "管理员", 0);
         assertFalse(role.isEnabled());
     }
 }

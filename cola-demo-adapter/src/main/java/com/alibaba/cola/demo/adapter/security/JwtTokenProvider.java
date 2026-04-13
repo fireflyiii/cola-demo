@@ -13,11 +13,12 @@ import jakarta.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
  * JWT Token Provider
- * 放在 adapter 层作为认证相关的工具组件
+ * 支持AccessToken和RefreshToken
  */
 @Slf4j
 @Component
@@ -28,6 +29,9 @@ public class JwtTokenProvider {
 
     @Value("${jwt.expiration:86400000}")
     private Long jwtExpiration;
+
+    @Value("${jwt.refresh-expiration:604800000}")
+    private Long jwtRefreshExpiration;
 
     @Value("${jwt.issuer:cola-demo}")
     private String jwtIssuer;
@@ -40,11 +44,12 @@ public class JwtTokenProvider {
             throw new IllegalStateException("JWT secret must be at least 64 characters long. Set JWT_SECRET environment variable.");
         }
         this.signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        log.info("JwtTokenProvider initialized with expiration: {}ms, issuer: {}", jwtExpiration, jwtIssuer);
+        log.info("JwtTokenProvider initialized with expiration: {}ms, refreshExpiration: {}ms, issuer: {}",
+                jwtExpiration, jwtRefreshExpiration, jwtIssuer);
     }
 
     /**
-     * 生成Token
+     * 生成AccessToken
      */
     public String generateToken(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -67,6 +72,25 @@ public class JwtTokenProvider {
     }
 
     /**
+     * 生成RefreshToken
+     */
+    public String generateRefreshToken(Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtRefreshExpiration);
+
+        return Jwts.builder()
+                .subject(userDetails.getUsername())
+                .claim("type", "refresh")
+                .claim("jti", UUID.randomUUID().toString().replace("-", ""))
+                .issuer(jwtIssuer)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(signingKey)
+                .compact();
+    }
+
+    /**
      * 获取过期时间（秒）
      */
     public Long getExpirationTime() {
@@ -74,38 +98,57 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 从Token获取用户名
+     * 解析Token并返回Claims，失败返回null
+     * 合并验证和解析为一次操作，避免双重解析开销
      */
-    public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(signingKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        return claims.getSubject();
-    }
-
-    /**
-     * 验证Token
-     * 注意：ExpiredJwtException 不在此处捕获，由调用方区分处理
-     */
-    public boolean validateToken(String token) {
+    public Claims parseToken(String token) {
         try {
-            Jwts.parser()
+            return Jwts.parser()
                     .verifyWith(signingKey)
                     .build()
-                    .parseSignedClaims(token);
-            return true;
+                    .parseSignedClaims(token)
+                    .getPayload();
         } catch (SecurityException ex) {
             log.error("Invalid JWT signature: {}", ex.getMessage());
         } catch (MalformedJwtException ex) {
             log.error("Invalid JWT token: {}", ex.getMessage());
+        } catch (ExpiredJwtException ex) {
+            log.debug("JWT token expired: {}", ex.getMessage());
         } catch (UnsupportedJwtException ex) {
             log.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
             log.error("JWT claims string is empty: {}", ex.getMessage());
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * 从Token获取用户名
+     */
+    public String getUsernameFromToken(String token) {
+        Claims claims = parseToken(token);
+        return claims != null ? claims.getSubject() : null;
+    }
+
+    /**
+     * 验证Token是否是AccessToken
+     */
+    public boolean isAccessToken(Claims claims) {
+        return claims != null && "access".equals(claims.get("type", String.class));
+    }
+
+    /**
+     * 验证Token是否是RefreshToken
+     */
+    public boolean isRefreshToken(Claims claims) {
+        return claims != null && "refresh".equals(claims.get("type", String.class));
+    }
+
+    /**
+     * 验证Token
+     */
+    public boolean validateToken(String token) {
+        return parseToken(token) != null;
     }
 
     /**
@@ -121,6 +164,8 @@ public class JwtTokenProvider {
             Date expiration = claims.getExpiration();
             long remaining = (expiration.getTime() - System.currentTimeMillis()) / 1000;
             return remaining > 0 ? remaining : 0;
+        } catch (ExpiredJwtException ex) {
+            return 0L;
         } catch (Exception e) {
             return 0L;
         }

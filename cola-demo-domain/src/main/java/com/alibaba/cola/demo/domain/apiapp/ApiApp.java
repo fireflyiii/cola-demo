@@ -83,7 +83,7 @@ public class ApiApp implements AggregateRoot {
     }
 
     /**
-     * 设置ID（由Gateway在持久化后调用）
+     * 设置ID（由Gateway在持久化后回填主键）
      */
     public void setId(Long id) {
         this.id = id;

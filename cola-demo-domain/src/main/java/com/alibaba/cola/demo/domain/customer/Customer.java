@@ -27,6 +27,17 @@ public class Customer implements AggregateRoot {
     }
 
     /**
+     * 重建客户实体（由Assembler从持久化层加载时使用）
+     */
+    public static Customer rebuild(Long customerId, String customerName, CompanyType companyType) {
+        Customer customer = new Customer();
+        customer.customerId = customerId;
+        customer.customerName = customerName;
+        customer.companyType = companyType;
+        return customer;
+    }
+
+    /**
      * 领域行为：校验客户信息
      */
     public void validate() {
@@ -36,7 +47,7 @@ public class Customer implements AggregateRoot {
     }
 
     /**
-     * 设置客户ID（由Gateway在持久化后调用）
+     * 设置客户ID（由Gateway在持久化后回填主键）
      */
     public void setCustomerId(Long customerId) {
         this.customerId = customerId;

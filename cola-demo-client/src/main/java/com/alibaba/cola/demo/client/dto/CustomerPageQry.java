@@ -4,6 +4,9 @@ import com.alibaba.cola.dto.PageQuery;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+/**
+ * 客户分页查询
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class CustomerPageQry extends PageQuery {

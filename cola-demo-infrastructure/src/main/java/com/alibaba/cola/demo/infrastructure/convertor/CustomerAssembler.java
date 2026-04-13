@@ -1,6 +1,7 @@
 package com.alibaba.cola.demo.infrastructure.convertor;
 
 import com.alibaba.cola.demo.domain.customer.Customer;
+import com.alibaba.cola.demo.domain.customer.CompanyType;
 import com.alibaba.cola.demo.infrastructure.dataobject.CustomerEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
@@ -17,14 +18,13 @@ public interface CustomerAssembler {
     CustomerEntity toEntity(Customer customer);
 
     /**
-     * Entity转Domain（使用工厂方法，保留领域校验）
+     * Entity转Domain（使用rebuild方法，从DB加载不触发创建校验）
      */
     default Customer toDomain(CustomerEntity entity) {
         if (entity == null) {
             return null;
         }
-        Customer customer = Customer.create(entity.getCustomerName(), entity.getCompanyType());
-        customer.setCustomerId(entity.getId());
-        return customer;
+        return Customer.rebuild(entity.getId(), entity.getCustomerName(),
+                CompanyType.fromCode(entity.getCompanyType()));
     }
 }

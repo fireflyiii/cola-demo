@@ -2,8 +2,10 @@ package com.alibaba.cola.demo.adapter.web;
 
 import com.alibaba.cola.demo.client.api.IApiAppService;
 import com.alibaba.cola.demo.client.dto.ApiAppAddCmd;
+import com.alibaba.cola.demo.client.dto.ApiAppPageQry;
 import com.alibaba.cola.demo.client.dto.data.ApiAppDTO;
 import com.alibaba.cola.dto.MultiResponse;
+import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.dto.SingleResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +19,7 @@ import jakarta.validation.Valid;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api-app")
+@RequestMapping("/api/v1/api-app")
 @RequiredArgsConstructor
 public class ApiAppController {
 
@@ -41,5 +43,16 @@ public class ApiAppController {
     public MultiResponse<ApiAppDTO> listApiApps() {
         log.info("查询API应用列表");
         return apiAppService.listApiApps();
+    }
+
+    /**
+     * 分页查询API应用
+     */
+    @PostMapping("/page")
+    @PreAuthorize("hasRole('ADMIN')")
+    public PageResponse<ApiAppDTO> pageApiApps(@RequestBody ApiAppPageQry qry) {
+        log.info("分页查询API应用请求: appName={}, status={}, pageIndex={}, pageSize={}",
+                qry.getAppName(), qry.getStatus(), qry.getPageIndex(), qry.getPageSize());
+        return apiAppService.pageApiApps(qry);
     }
 }

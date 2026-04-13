@@ -10,5 +10,8 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface PermissionConvertor {
 
+    /**
+     * Domain -> DTO
+     */
     PermissionDTO toDTO(Permission permission);
 }

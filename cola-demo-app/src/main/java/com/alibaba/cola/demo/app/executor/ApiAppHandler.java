@@ -1,11 +1,14 @@
 package com.alibaba.cola.demo.app.executor;
 
 import com.alibaba.cola.demo.app.convertor.ApiAppConvertor;
+import com.alibaba.cola.demo.client.common.PageResult;
 import com.alibaba.cola.demo.client.dto.ApiAppAddCmd;
+import com.alibaba.cola.demo.client.dto.ApiAppPageQry;
 import com.alibaba.cola.demo.client.dto.data.ApiAppDTO;
 import com.alibaba.cola.demo.domain.apiapp.ApiApp;
 import com.alibaba.cola.demo.domain.apiapp.gateway.ApiAppGateway;
 import com.alibaba.cola.dto.MultiResponse;
+import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.dto.SingleResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -44,5 +47,10 @@ public class ApiAppHandler {
             return SingleResponse.buildFailure("NOT_FOUND", "API Key无效");
         }
         return SingleResponse.of(apiAppConvertor.toDTO(apiApp));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ApiAppDTO> page(ApiAppPageQry qry) {
+        return PageResult.map(apiAppGateway.page(qry), apiAppConvertor::toDTO);
     }
 }

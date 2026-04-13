@@ -2,9 +2,11 @@ package com.alibaba.cola.demo.adapter.web;
 
 import com.alibaba.cola.demo.client.api.IPermissionService;
 import com.alibaba.cola.demo.client.dto.PermissionAddCmd;
+import com.alibaba.cola.demo.client.dto.PermissionPageQry;
 import com.alibaba.cola.demo.client.dto.RolePermissionAssignCmd;
 import com.alibaba.cola.demo.client.dto.data.PermissionDTO;
 import com.alibaba.cola.dto.MultiResponse;
+import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.dto.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +19,7 @@ import jakarta.validation.Valid;
  */
 @Slf4j
 @RestController
-@RequestMapping("/permission")
+@RequestMapping("/api/v1/permission")
 @RequiredArgsConstructor
 public class PermissionController {
 
@@ -38,6 +40,17 @@ public class PermissionController {
     @GetMapping("/list")
     public MultiResponse<PermissionDTO> listPermissions() {
         return permissionService.listPermissions();
+    }
+
+    /**
+     * 分页查询权限
+     */
+    @PostMapping("/page")
+    public PageResponse<PermissionDTO> pagePermissions(@RequestBody PermissionPageQry qry) {
+        log.info("分页查询权限请求: permissionName={}, resourceType={}, resourcePath={}, pageIndex={}, pageSize={}",
+                qry.getPermissionName(), qry.getResourceType(), qry.getResourcePath(),
+                qry.getPageIndex(), qry.getPageSize());
+        return permissionService.pagePermissions(qry);
     }
 
     /**

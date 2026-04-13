@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
-@RequestMapping("/open/order")
+@RequestMapping("/api/v1/order")
 @RequiredArgsConstructor
 public class OrderController {
 
