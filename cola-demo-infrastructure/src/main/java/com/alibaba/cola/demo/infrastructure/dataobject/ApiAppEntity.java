@@ -16,6 +16,7 @@ public class ApiAppEntity extends BaseEntity {
 
     private String appName;
     private String apiKey;
+    private String apiKeyHash;
     private String allowedPaths;
     private LocalDateTime expiresAt;
     private Integer status;

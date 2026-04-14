@@ -34,6 +34,82 @@ services:
       timeout: 5s
       retries: 5
 
+  eureka:
+    build:
+      context: .
+      dockerfile: Dockerfile.eureka
+    container_name: cola-demo-eureka
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.1
+    container_name: cola-demo-rocketmq-namesrv
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9876"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.1
+    container_name: cola-demo-rocketmq-broker
+    ports:
+      - "10911:10911"
+    depends_on:
+      rocketmq-namesrv:
+        condition: service_healthy
+    environment:
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+    command: sh mqbroker -n rocketmq-namesrv:9876 --enable-proxy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10911"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: cola-demo-gateway
+    ports:
+      - "9090:8080"
+    depends_on:
+      eureka:
+        condition: service_healthy
+    environment:
+      EUREKA_SERVER_URL: http://eureka:8761/eureka/
+      APOLLO_META: ${APOLLO_META:-}
+      SENTINEL_DASHBOARD: ${SENTINEL_DASHBOARD:-localhost:8080}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: cola-demo-zipkin
+    ports:
+      - "9411:9411"
+    environment:
+      STORAGE_TYPE: mem
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9411/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
 volumes:
   mysql-data:
   redis-data:

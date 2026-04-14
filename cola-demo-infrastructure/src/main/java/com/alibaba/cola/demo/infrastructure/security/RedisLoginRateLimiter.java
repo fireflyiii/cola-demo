@@ -30,14 +30,13 @@ public class RedisLoginRateLimiter implements LoginRateLimiter {
         String key = KEY_PREFIX + username;
         RAtomicLong counter = redissonClient.getAtomicLong(key);
 
-        long attempts = counter.get();
-        if (attempts == 0) {
-            // 首次尝试，设置窗口过期
-            counter.set(1);
+        // 原子操作：首次尝试使用 compareAndSet 保证并发安全
+        if (counter.compareAndSet(0, 1)) {
             counter.expire(WINDOW_SECONDS, TimeUnit.SECONDS);
             return true;
         }
 
+        long attempts = counter.get();
         if (attempts >= MAX_ATTEMPTS) {
             log.warn("Login rate limited for user: {}", username);
             // 延长锁定时间

@@ -4,8 +4,6 @@ import com.alibaba.cola.demo.app.convertor.UserConvertor;
 import com.alibaba.cola.demo.client.api.IAuthService;
 import com.alibaba.cola.demo.client.common.BizErrorCode;
 import com.alibaba.cola.demo.client.common.DomainException;
-import com.alibaba.cola.demo.client.dto.LoginCmd;
-import com.alibaba.cola.demo.client.dto.LoginResponse;
 import com.alibaba.cola.demo.client.dto.data.UserAuthInfoDTO;
 import com.alibaba.cola.demo.client.dto.data.UserDTO;
 import com.alibaba.cola.demo.domain.user.User;
@@ -16,7 +14,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * 认证服务实现
+ * 认证服务实现（领域服务）
+ * 仅处理用户信息查询，Token生成等适配器关注点由 AuthHandler 处理
  */
 @Service
 @RequiredArgsConstructor
@@ -24,28 +23,6 @@ public class AuthServiceImpl implements IAuthService {
 
     private final UserGateway userGateway;
     private final UserConvertor userConvertor;
-
-    @Override
-    public LoginResponse login(LoginCmd loginCmd, String token, String refreshToken, Long expiresIn) {
-        String username = loginCmd.getUsername();
-        User user = userGateway.findByUsername(username);
-        if (user == null) {
-            throw new DomainException(BizErrorCode.B_USER_NOT_FOUND);
-        }
-        List<String> roles = userGateway.findRoleCodesByUsername(username);
-
-        return new LoginResponse(token, expiresIn, "Bearer", refreshToken, userConvertor.toDTO(user, roles));
-    }
-
-    @Override
-    public LoginResponse refreshToken(String username, String accessToken, String refreshToken, Long expiresIn) {
-        User user = userGateway.findByUsername(username);
-        if (user == null) {
-            throw new DomainException(BizErrorCode.B_USER_NOT_FOUND);
-        }
-        List<String> roles = userGateway.findRoleCodesByUsername(username);
-        return new LoginResponse(accessToken, expiresIn, "Bearer", refreshToken, userConvertor.toDTO(user, roles));
-    }
 
     @Override
     public UserDTO getUserInfo(String username) {

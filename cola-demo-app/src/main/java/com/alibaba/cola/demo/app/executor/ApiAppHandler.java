@@ -51,6 +51,7 @@ public class ApiAppHandler {
 
     @Transactional(readOnly = true)
     public PageResponse<ApiAppDTO> page(ApiAppPageQry qry) {
+        PageResult.validatePageSize(qry.getPageSize());
         return PageResult.map(apiAppGateway.page(qry), apiAppConvertor::toDTO);
     }
 }

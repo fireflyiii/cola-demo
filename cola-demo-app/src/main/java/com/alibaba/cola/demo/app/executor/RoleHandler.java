@@ -59,6 +59,7 @@ public class RoleHandler {
 
     @Transactional(readOnly = true)
     public PageResponse<RoleDTO> page(RolePageQry qry) {
+        PageResult.validatePageSize(qry.getPageSize());
         return PageResult.map(roleGateway.page(qry), roleConvertor::toDTO);
     }
 }

@@ -1,5 +1,6 @@
 server:
   port: 8080
+  shutdown: graceful
 
 spring:
   application:
@@ -38,11 +39,38 @@ spring:
       timeout: ${REDIS_TIMEOUT:3000ms}
       connect-timeout: ${REDIS_CONNECT_TIMEOUT:3000ms}
 
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+        port: ${SENTINEL_PORT:8719}
+      eager: true
+      http-method-specify: true
+      web-context-unify: false
+      datasource:
+        # 流控规则 - 从 Apollo 加载
+        flow:
+          apollo:
+            namespace-name: application
+            flow-rules-key: sentinel.flow.rules
+            rule-type: flow
+            default-flow-rule-value: "[]"
+        # 降级规则 - 从 Apollo 加载
+        degrade:
+          apollo:
+            namespace-name: application
+            flow-rules-key: sentinel.degrade.rules
+            rule-type: degrade
+            default-flow-rule-value: "[]"
+
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
   type-aliases-package: com.alibaba.cola.demo.infrastructure.dataobject
   configuration:
     map-underscore-to-camel-case: true
+
+# 优雅停机超时（等待在途请求完成的最大时间）
+spring.lifecycle.timeout-per-shutdown-phase: 30s
 
 # Actuator监控配置
 management:
@@ -56,6 +84,12 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:0.1}
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
 
 logging:
   level:
@@ -88,3 +122,31 @@ apollo:
   cache-dir: ${APOLLO_CACHE_DIR:}
   cluster: ${APOLLO_CLUSTER:default}
   auto-update-injected-spring-properties: true
+
+# Eureka 服务注册发现
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: ${EUREKA_ENABLED:true}
+    fetch-registry: ${EUREKA_ENABLED:true}
+    registry-fetch-interval-seconds: 30
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}:${random.uuid}
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+# RocketMQ 消息队列
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:localhost:9876}
+  producer:
+    group: ${spring.application.name}-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+
+# 定时任务配置
+schedule:
+  enabled: ${SCHEDULE_ENABLED:true}
+  cleanup:
+    interval: 300000  # 清理任务间隔（毫秒），默认5分钟

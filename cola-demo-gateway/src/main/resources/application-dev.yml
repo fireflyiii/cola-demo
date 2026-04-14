@@ -1,0 +1,35 @@
+# 开发环境配置
+spring:
+  # 开发环境关闭 Eureka 服务发现
+  cloud:
+    discovery:
+      enabled: false
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: false
+          # 开发环境使用直连，不走 Eureka 负载均衡
+          routes:
+            - id: cola-demo
+              uri: ${ROUTE_URI:http://localhost:8080}
+              predicates:
+                - Path=/api/**
+
+# Eureka 开发环境配置（本地开发默认关闭）
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+logging:
+  level:
+    com.alibaba.cola.demo: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+
+management:
+  endpoint:
+    health:
+      show-details: always

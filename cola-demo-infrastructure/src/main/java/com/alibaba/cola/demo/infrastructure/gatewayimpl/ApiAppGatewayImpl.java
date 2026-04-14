@@ -16,6 +16,9 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,16 +37,19 @@ public class ApiAppGatewayImpl implements ApiAppGateway {
     @Override
     public void create(ApiApp apiApp) {
         ApiAppEntity entity = apiAppAssembler.toEntity(apiApp);
+        // 存储API Key的SHA-256哈希值
+        entity.setApiKeyHash(sha256(apiApp.getApiKey()));
         apiAppMapper.insert(entity);
         apiApp.setId(entity.getId());
     }
 
     @Override
     public ApiApp findByApiKey(String apiKey) {
-        String cacheKey = CacheKeys.API_APP_PREFIX + apiKey;
+        String apiKeyHash = sha256(apiKey);
+        String cacheKey = CacheKeys.API_APP_PREFIX + apiKeyHash;
         return redisCacheService.getOrLoad(cacheKey, ApiApp.class, () -> {
             LambdaQueryWrapper<ApiAppEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(ApiAppEntity::getApiKey, apiKey);
+            wrapper.eq(ApiAppEntity::getApiKeyHash, apiKeyHash);
             return apiAppAssembler.toDomain(apiAppMapper.selectOne(wrapper));
         }, Duration.ofSeconds(CacheKeys.API_APP_TTL_SECONDS));
     }
@@ -68,5 +74,23 @@ public class ApiAppGatewayImpl implements ApiAppGateway {
                 apiAppMapper.selectPage(PageHelper.toPage(qry), wrapper),
                 apiAppAssembler::toDomain
         );
+    }
+
+    private String sha256(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException("SHA-256 algorithm not available", ex);
+        }
     }
 }

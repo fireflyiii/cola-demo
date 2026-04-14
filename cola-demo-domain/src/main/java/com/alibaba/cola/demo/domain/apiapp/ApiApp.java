@@ -70,8 +70,8 @@ public class ApiApp implements AggregateRoot {
     /**
      * 判断是否允许访问指定路径
      */
-    public boolean isPathAllowed(String requestPath) {
-        return PathMatcher.isPathAllowed(allowedPaths, requestPath);
+    public boolean isPathAllowed(String requestPath, PathMatcher pathMatcher) {
+        return pathMatcher.isPathAllowed(allowedPaths, requestPath);
     }
 
     /**

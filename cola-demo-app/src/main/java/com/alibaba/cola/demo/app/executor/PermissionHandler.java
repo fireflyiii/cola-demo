@@ -57,6 +57,7 @@ public class PermissionHandler {
 
     @Transactional(readOnly = true)
     public PageResponse<PermissionDTO> page(PermissionPageQry qry) {
+        PageResult.validatePageSize(qry.getPageSize());
         return PageResult.map(permissionGateway.page(qry), permissionConvertor::toDTO);
     }
 }

@@ -47,6 +47,7 @@ public class CustomerHandler {
 
     @Transactional(readOnly = true)
     public PageResponse<CustomerDTO> page(CustomerPageQry qry) {
+        PageResult.validatePageSize(qry.getPageSize());
         return PageResult.map(customerGateway.pageByName(qry), customerConvertor::toDTO);
     }
 }

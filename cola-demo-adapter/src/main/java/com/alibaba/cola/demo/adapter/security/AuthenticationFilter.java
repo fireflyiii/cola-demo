@@ -1,6 +1,7 @@
 package com.alibaba.cola.demo.adapter.security;
 
 import com.alibaba.cola.demo.client.api.IApiAppService;
+import com.alibaba.cola.demo.client.common.ErrorCodeResolver;
 import com.alibaba.cola.demo.client.dto.data.ApiAppDTO;
 import com.alibaba.cola.demo.domain.common.PathMatcher;
 import com.alibaba.cola.demo.domain.common.TokenBlacklist;
@@ -46,6 +47,8 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklist tokenBlacklist;
+    private final PathMatcher pathMatcher;
+    private final ErrorCodeResolver errorCodeResolver;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -73,7 +76,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             SingleResponse<ApiAppDTO> apiAppResponse = apiAppService.getByApiKey(apiKey);
             if (!apiAppResponse.isSuccess() || apiAppResponse.getData() == null) {
                 log.warn("Invalid API Key: {}****", maskKey(apiKey));
-                request.setAttribute("authError", "API Key无效");
+                request.setAttribute("authError", errorCodeResolver.resolve("API_KEY_INVALID"));
                 return;
             }
 
@@ -82,22 +85,22 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             // 校验状态
             if (apiApp.getStatus() == null || apiApp.getStatus() != 1) {
                 log.warn("API Key应用已禁用: appName={}", apiApp.getAppName());
-                request.setAttribute("authError", "API应用已禁用");
+                request.setAttribute("authError", errorCodeResolver.resolve("API_KEY_DISABLED"));
                 return;
             }
 
             // 校验过期
             if (apiApp.getExpiresAt() != null && apiApp.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
                 log.warn("API Key应用已过期: appName={}", apiApp.getAppName());
-                request.setAttribute("authError", "API应用已过期");
+                request.setAttribute("authError", errorCodeResolver.resolve("API_KEY_EXPIRED"));
                 return;
             }
 
-            // 校验路径权限 — 委托给领域PathMatcher工具
+            // 校验路径权限 — 委托给PathMatcher SPI
             String requestPath = request.getRequestURI();
-            if (!PathMatcher.isPathAllowed(apiApp.getAllowedPaths(), requestPath)) {
+            if (!pathMatcher.isPathAllowed(apiApp.getAllowedPaths(), requestPath)) {
                 log.warn("API Key无权访问: appName={}, path={}", apiApp.getAppName(), requestPath);
-                request.setAttribute("authError", "API应用无权访问该路径");
+                request.setAttribute("authError", errorCodeResolver.resolve("API_KEY_PATH_NOT_ALLOWED"));
                 return;
             }
 
@@ -107,7 +110,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             log.debug("API Key认证成功: appName={}, path={}", apiApp.getAppName(), requestPath);
         } catch (Exception ex) {
             log.error("API Key认证异常", ex);
-            request.setAttribute("authError", "API Key认证失败");
+            request.setAttribute("authError", errorCodeResolver.resolve("API_KEY_AUTH_FAILED"));
         }
     }
 
@@ -124,13 +127,13 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         Claims claims = jwtTokenProvider.parseToken(jwt);
         if (claims == null) {
             log.debug("Token校验失败");
-            request.setAttribute("authError", "Token无效或已过期");
+            request.setAttribute("authError", errorCodeResolver.resolve("AUTH_TOKEN_INVALID"));
             return;
         }
 
         if (tokenBlacklist.contains(jwt)) {
             log.debug("Token已注销");
-            request.setAttribute("authError", "Token已被注销");
+            request.setAttribute("authError", errorCodeResolver.resolve("AUTH_TOKEN_REVOKED"));
             return;
         }
 

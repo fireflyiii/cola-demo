@@ -1,0 +1,79 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: cola-demo-gateway
+  config:
+    import: optional:apollo://
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: ${EUREKA_ENABLED:true}
+              lower-case-service-id: true
+          routes:
+            # cola-demo 服务路由（Eureka 可用时走负载均衡，不可用时走直连）
+            - id: cola-demo
+              uri: ${ROUTE_URI:lb://cola-demo}
+              predicates:
+                - Path=/api/**
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allow-credentials: true
+                allowed-origins: "${cors.allowed-origins:http://localhost:3000,http://localhost:8080}"
+                allowed-headers: "*"
+                allowed-methods: "*"
+                max-age: 3600
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+        port: ${SENTINEL_PORT:8719}
+      eager: true
+
+# Apollo 配置
+apollo:
+  meta: ${APOLLO_META:}
+  cache-dir: ${APOLLO_CACHE_DIR:}
+  cluster: ${APOLLO_CLUSTER:default}
+  auto-update-injected-spring-properties: true
+
+# Eureka 服务发现
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: ${EUREKA_ENABLED:true}
+    fetch-registry: ${EUREKA_ENABLED:true}
+    registry-fetch-interval-seconds: 10
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}:${random.uuid}
+
+# CORS 允许域名
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:8080
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:0.1}
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+
+logging:
+  level:
+    com.alibaba.cola.demo: INFO
+    org.springframework.cloud.gateway: INFO

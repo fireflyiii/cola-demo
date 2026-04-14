@@ -24,6 +24,8 @@ public class RedisCacheService {
 
     private static final String EMPTY_VALUE_MARKER = "##EMPTY##";
     private static final Duration EMPTY_VALUE_TTL = Duration.ofSeconds(60);
+    private static final String EMPTY_SUFFIX = ":empty";
+    private static final String LIST_SUFFIX = ":list";
 
     private final RedissonClient redissonClient;
 
@@ -66,18 +68,25 @@ public class RedisCacheService {
     /**
      * 获取列表缓存，不存在时通过loader加载并缓存
      * 空列表也会缓存，防止缓存穿透
+     * 使用 :list 后缀避免与单值缓存的 Key 冲突
      */
     public <T> List<T> getListOrLoad(String key, Supplier<List<T>> loader, Duration duration) {
-        RList<T> list = redissonClient.getList(key);
-        if (!list.isExists() && redissonClient.getBucket(key).isExists()) {
-            // 空值标记存在，说明之前查询为空
+        String listKey = key + LIST_SUFFIX;
+        String emptyKey = key + EMPTY_SUFFIX;
+
+        // 检查空值标记
+        RBucket<String> emptyMarker = redissonClient.getBucket(emptyKey);
+        if (emptyMarker.isExists()) {
             log.debug("Cache hit (empty list marker): {}", key);
             return Collections.emptyList();
         }
+
+        RList<T> list = redissonClient.getList(listKey);
         if (!list.isEmpty()) {
             log.debug("Cache hit (list): {}", key);
             return list.readAll();
         }
+
         log.debug("Cache miss (list): {}", key);
         List<T> value = loader.get();
         if (value == null) {
@@ -89,7 +98,6 @@ public class RedisCacheService {
             list.expire(duration);
         } else {
             // 空列表设置短TTL，防止缓存穿透
-            RBucket<String> emptyMarker = redissonClient.getBucket(key);
             emptyMarker.set(EMPTY_VALUE_MARKER, EMPTY_VALUE_TTL);
             log.debug("Cache empty list marker set: {}", key);
         }
@@ -101,16 +109,15 @@ public class RedisCacheService {
      */
     public void evict(String key) {
         redissonClient.getBucket(key).delete();
-        redissonClient.getList(key).delete();
         log.debug("Cache evicted: {}", key);
     }
 
     /**
-     * 删除列表缓存
+     * 删除列表缓存（同时清理列表和空值标记）
      */
     public void evictList(String key) {
-        redissonClient.getList(key).delete();
-        redissonClient.getBucket(key).delete();
+        redissonClient.getList(key + LIST_SUFFIX).delete();
+        redissonClient.getBucket(key + EMPTY_SUFFIX).delete();
         log.debug("Cache evicted (list): {}", key);
     }
 }

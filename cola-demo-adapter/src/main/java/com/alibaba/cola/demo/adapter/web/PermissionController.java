@@ -1,6 +1,7 @@
 package com.alibaba.cola.demo.adapter.web;
 
 import com.alibaba.cola.demo.client.api.IPermissionService;
+import com.alibaba.cola.demo.client.common.OperationLog;
 import com.alibaba.cola.demo.client.dto.PermissionAddCmd;
 import com.alibaba.cola.demo.client.dto.PermissionPageQry;
 import com.alibaba.cola.demo.client.dto.RolePermissionAssignCmd;
@@ -9,7 +10,7 @@ import com.alibaba.cola.dto.MultiResponse;
 import com.alibaba.cola.dto.PageResponse;
 import com.alibaba.cola.dto.Response;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -17,7 +18,6 @@ import jakarta.validation.Valid;
 /**
  * 权限管理控制器
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/permission")
 @RequiredArgsConstructor
@@ -29,8 +29,9 @@ public class PermissionController {
      * 添加权限
      */
     @PostMapping("/add")
+    @PreAuthorize("hasRole('ADMIN')")
+    @OperationLog(type = "新增", description = "添加权限")
     public Response addPermission(@RequestBody @Valid PermissionAddCmd cmd) {
-        log.info("添加权限请求: permissionCode={}", cmd.getPermissionCode());
         return permissionService.addPermission(cmd);
     }
 
@@ -47,9 +48,6 @@ public class PermissionController {
      */
     @PostMapping("/page")
     public PageResponse<PermissionDTO> pagePermissions(@RequestBody PermissionPageQry qry) {
-        log.info("分页查询权限请求: permissionName={}, resourceType={}, resourcePath={}, pageIndex={}, pageSize={}",
-                qry.getPermissionName(), qry.getResourceType(), qry.getResourcePath(),
-                qry.getPageIndex(), qry.getPageSize());
         return permissionService.pagePermissions(qry);
     }
 
@@ -57,8 +55,9 @@ public class PermissionController {
      * 为角色分配权限
      */
     @PostMapping("/assignToRole")
+    @PreAuthorize("hasRole('ADMIN')")
+    @OperationLog(type = "分配", description = "为角色分配权限")
     public Response assignPermissionToRole(@RequestBody @Valid RolePermissionAssignCmd cmd) {
-        log.info("分配权限请求: roleId={}, permissionId={}", cmd.getRoleId(), cmd.getPermissionId());
         return permissionService.assignPermissionToRole(cmd);
     }
 
@@ -66,8 +65,9 @@ public class PermissionController {
      * 移除角色权限
      */
     @DeleteMapping("/removeFromRole")
+    @PreAuthorize("hasRole('ADMIN')")
+    @OperationLog(type = "移除", description = "移除角色权限")
     public Response removePermissionFromRole(@RequestParam Long roleId, @RequestParam Long permissionId) {
-        log.info("移除权限请求: roleId={}, permissionId={}", roleId, permissionId);
         return permissionService.removePermissionFromRole(roleId, permissionId);
     }
 }

@@ -12,7 +12,24 @@ import java.util.stream.Collectors;
  */
 public final class PageResult {
 
+    /**
+     * pageSize 最大值限制，防止恶意请求导致 OOM
+     */
+    public static final int MAX_PAGE_SIZE = 100;
+
     private PageResult() {
+    }
+
+    /**
+     * 校验分页参数
+     *
+     * @param pageSize 每页条数
+     * @throws DomainException 当 pageSize 超过最大限制时
+     */
+    public static void validatePageSize(int pageSize) {
+        if (pageSize > MAX_PAGE_SIZE) {
+            throw new DomainException(BizErrorCode.B_PAGE_SIZE_EXCEEDED);
+        }
     }
 
     /**

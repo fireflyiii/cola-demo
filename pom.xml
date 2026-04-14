@@ -24,6 +24,9 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <redisson.version>3.46.0</redisson.version>
         <apollo.version>2.3.0</apollo.version>
+        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
+        <rocketmq-spring.version>2.3.5</rocketmq-spring.version>
     </properties>
 
     <modules>
@@ -33,6 +36,8 @@
         <module>cola-demo-domain</module>
         <module>cola-demo-infrastructure</module>
         <module>cola-demo-start</module>
+        <module>cola-demo-eureka-server</module>
+        <module>cola-demo-gateway</module>
     </modules>
 
     <dependencies>
@@ -71,6 +76,11 @@
                 <artifactId>cola-demo-infrastructure</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.alibaba.cola</groupId>
+                <artifactId>cola-demo-gateway</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- COLA Components BOM -->
             <dependency>
@@ -86,6 +96,24 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud BOM -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud Alibaba BOM -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -148,6 +176,13 @@
                 <groupId>com.ctrip.framework.apollo</groupId>
                 <artifactId>apollo-client-config-data</artifactId>
                 <version>${apollo.version}</version>
+            </dependency>
+
+            <!-- RocketMQ Spring Boot Starter -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq-spring.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -1,6 +1,7 @@
 package com.alibaba.cola.demo.start.config;
 
 import com.alibaba.cola.demo.adapter.security.AuthenticationFilter;
+import com.alibaba.cola.demo.client.common.ErrorCodeResolver;
 import com.alibaba.cola.dto.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +42,7 @@ public class SecurityConfig {
 
     private final AuthenticationFilter authenticationFilter;
     private final ObjectMapper objectMapper;
+    private final ErrorCodeResolver errorCodeResolver;
 
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
@@ -78,7 +80,7 @@ public class SecurityConfig {
     private void handleAuthenticationEntryPoint(HttpServletRequest request, HttpServletResponse response,
                                                  org.springframework.security.core.AuthenticationException ex) throws IOException {
         String authError = (String) request.getAttribute("authError");
-        String message = authError != null ? authError : "未认证，请先登录";
+        String message = authError != null ? authError : errorCodeResolver.resolve("AUTH_NOT_AUTHENTICATED");
         log.warn("Authentication entry point: {}", message);
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
@@ -94,7 +96,7 @@ public class SecurityConfig {
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(Response.buildFailure("403", "权限不足")));
+        response.getWriter().write(objectMapper.writeValueAsString(Response.buildFailure("403", errorCodeResolver.resolve("B_PERMISSION_DENIED"))));
     }
 
     @Bean

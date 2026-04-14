@@ -5,7 +5,8 @@ import lombok.Getter;
 /**
  * 业务错误码枚举
  * 所有领域层抛出 DomainException 时应使用此枚举保证错误码一致性
- * errCode 直接使用枚举名称，避免冗余
+ * errCode 直接使用枚举名称，errDesc 作为 i18n message key
+ * 实际显示消息由 ErrorCodeResolver 从 MessageSource 解析
  */
 @Getter
 public enum BizErrorCode {
@@ -41,9 +42,22 @@ public enum BizErrorCode {
     // Auth
     B_AUTH_LOGIN_RATE_LIMITED("登录尝试过于频繁，请稍后再试"),
 
+    // Message
+    B_MESSAGE_PUBLISH_FAILED("消息发送失败"),
+
+    // Pagination
+    B_PAGE_SIZE_EXCEEDED("每页条数超过最大限制"),
+
+    // Lock
+    B_LOCK_ACQUIRE_FAILED("获取锁失败，请稍后重试"),
+
     // Common
     B_PERMISSION_DENIED("权限不足");
 
+    /**
+     * 默认描述（兜底），同时也是 i18n message key（与枚举名称相同）
+     * 当 MessageSource 中找不到对应 key 时，DomainException 使用此值作为兜底消息
+     */
     private final String errDesc;
 
     BizErrorCode(String errDesc) {
