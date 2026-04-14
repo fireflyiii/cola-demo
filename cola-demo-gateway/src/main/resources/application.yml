@@ -20,6 +20,11 @@ spring:
               uri: ${ROUTE_URI:lb://cola-demo}
               predicates:
                 - Path=/api/**
+            # notification-service 路由示例（演示微服务间通过网关路由）
+            - id: notification-service
+              uri: ${NOTIFICATION_ROUTE_URI:lb://notification-service}
+              predicates:
+                - Path=/api/v1/notification/**
           globalcors:
             cors-configurations:
               '[/**]':

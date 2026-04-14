@@ -2,7 +2,7 @@ package com.alibaba.cola.demo.infrastructure.messaging;
 
 import com.alibaba.cola.demo.domain.common.MessagePublisher;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "rocketmq.enabled", havingValue = "false")
+@ConditionalOnMissingBean(MessagePublisher.class)
 public class NoOpMessagePublisher implements MessagePublisher {
 
     @Override

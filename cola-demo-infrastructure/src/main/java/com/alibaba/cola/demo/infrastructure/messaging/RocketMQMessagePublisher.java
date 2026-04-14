@@ -4,7 +4,7 @@ import com.alibaba.cola.demo.domain.common.MessagePublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "rocketmq.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(RocketMQTemplate.class)
 public class RocketMQMessagePublisher implements MessagePublisher {
 
     private final RocketMQTemplate rocketMQTemplate;

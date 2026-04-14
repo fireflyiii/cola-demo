@@ -4,12 +4,14 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @ComponentScan(basePackages = "com.alibaba.cola.demo")
 @MapperScan("com.alibaba.cola.demo.infrastructure.mapper")
+@EnableFeignClients(basePackages = "com.alibaba.cola.demo.infrastructure.feign")
 @EnableScheduling
 public class DemoApplication {
 

@@ -1,9 +1,12 @@
-# 开发环境配置
+# 开发环境配置 - 优化启动速度
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/cola-demo?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:cola}
     password: ${DB_PASSWORD:1qaz2wsx3edc}
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 5
 
   data:
     redis:
@@ -16,15 +19,39 @@ spring:
       timeout: 3000ms
       connect-timeout: 3000ms
 
-  # 开发环境关闭 Eureka 服务发现
+  # 开发环境 Spring Cloud 配置
   cloud:
-    discovery:
-      enabled: false
+    # Feign 开发环境配置（关闭 Sentinel 对 Feign 的熔断，避免开发阶段干扰调试）
+    openfeign:
+      client:
+        config:
+          notification-service:
+            # 开发环境可直连本地通知服务，绕过 Eureka 负载均衡
+            url: ${NOTIFICATION_SERVICE_URL:http://localhost:8081}
+    # 关闭 Sentinel 过滤器（开发环境不需要限流熔断，避免启动时连接 Sentinel Dashboard 超时）
+    sentinel:
+      filter:
+        enabled: false
+      eager: false
+      feign:
+        enabled: false
+
+  # 开发环境关闭 Apollo 配置拉取（本地配置足够，避免启动时连接 Apollo 超时）
+  config:
+    import: optional:apollo://
 
   # 开发环境关闭 RocketMQ 自动配置
   autoconfigure:
     exclude:
       - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
+
+  # 开启 Bean 懒加载（仅首次请求时初始化，大幅加快启动速度）
+  main:
+    lazy-initialization: true
+
+  # 关闭 JMX（开发环境不需要 JMX 监控）
+  jmx:
+    enabled: false
 
 mybatis-plus:
   configuration:
@@ -41,6 +68,14 @@ management:
   health:
     db:
       enabled: true
+  # 关闭 Zipkin 追踪采样和导出
+  tracing:
+    sampling:
+      probability: 0.0
+  zipkin:
+    tracing:
+      export:
+        enabled: false
 
 # JWT配置（开发环境使用默认密钥，生产环境必须通过环境变量设置）
 jwt:
@@ -49,10 +84,22 @@ jwt:
 # Eureka 开发环境配置（本地开发默认关闭）
 eureka:
   client:
-    enabled: false
     register-with-eureka: false
     fetch-registry: false
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
-# RocketMQ 开发环境关闭
-rocketmq:
+# RocketMQ 开发环境关闭（通过 autoconfigure.exclude 排除自动配置，NoOpMessagePublisher 自动降级）
+
+# Apollo 开发环境关闭
+apollo:
+  meta: ""
+
+# 定时任务开发环境关闭
+schedule:
   enabled: false
+
+# SpringDoc 开发环境关闭 Swagger UI（首次访问时再初始化）
+springdoc:
+  swagger-ui:
+    enabled: false

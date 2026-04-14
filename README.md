@@ -10,7 +10,7 @@ cola-demo/
 ├── cola-demo-adapter/         # 适配器层 - REST Controller、安全认证、AOP 审计/日志、i18n
 ├── cola-demo-app/             # 应用层 - CQRS Handler、Service、领域事件处理、MapStruct Convertor
 ├── cola-demo-domain/          # 领域层 - 聚合根、值对象、领域事件、网关接口、领域 SPI
-├── cola-demo-infrastructure/  # 基础设施层 - 持久化、Redis 安全、消息队列、分布式锁、缓存、定时任务
+├── cola-demo-infrastructure/  # 基础设施层 - 持久化、Redis 安全、消息队列、分布式锁、缓存、定时任务、Feign 远程调用
 ├── cola-demo-start/           # 启动模块 - Spring Boot 入口、Security 配置、OpenAPI、Flyway
 ├── cola-demo-gateway/         # API 网关 - Spring Cloud Gateway 路由、限流、追踪
 └── cola-demo-eureka-server/   # 注册中心 - Eureka Server
@@ -46,7 +46,7 @@ gateway → eureka, sentinel (独立网关模块)
 | **Adapter** | HTTP 入口、认证编排、AOP 审计/日志/限流、i18n 实现 | Client, App, Domain(通用接口) |
 | **App** | 业务流程编排、CQRS 命令/查询、领域事件处理 | Client, Domain |
 | **Domain** | 核心业务实体、领域规则、网关接口、领域 SPI | Client |
-| **Infrastructure** | 持久化、消息队列、分布式锁、Redis 安全、缓存、定时任务 | Domain, Client |
+| **Infrastructure** | 持久化、消息队列、分布式锁、Redis 安全、缓存、定时任务、Feign 远程调用 | Domain, Client |
 | **Gateway** | API 路由转发、限流熔断、追踪注入、CORS | Eureka, Sentinel |
 
 ## 领域模型
@@ -59,6 +59,7 @@ gateway → eureka, sentinel (独立网关模块)
 | **User/RBAC** | User, Role, Permission | 用户-角色-权限，含 Password 值对象、ResourceType 枚举 |
 | **Order** | Order | 订单管理，支持 JWT 和 API Key 双模式认证 |
 | **ApiApp** | ApiApp | 第三方 API 应用管理，API Key + 路径授权 |
+| **Notification** | - | 通知网关（领域接口），通过 Feign 调用远程通知服务 |
 
 ## 领域 SPI 模式
 
@@ -74,6 +75,7 @@ gateway → eureka, sentinel (独立网关模块)
 | `MessagePublisher` | infrastructure (RocketMQ) | 跨服务消息发布 |
 | `DistributedLock` | infrastructure (Redisson) | 分布式锁 |
 | `ErrorCodeResolver` | adapter (MessageSource) | 错误码 i18n 消息解析 |
+| `NotificationGateway` | infrastructure (Feign Client) | 通知服务远程调用网关 |
 
 ## 技术栈
 
@@ -84,6 +86,8 @@ gateway → eureka, sentinel (独立网关模块)
 | **Spring Cloud** | 2025.0.0 | 服务治理 |
 | **Spring Cloud Alibaba** | 2025.0.0.0 | Sentinel 限流熔断 |
 | **COLA Components** | 5.0.0 | DTO 基类、Response、PageQuery |
+| **Spring Cloud OpenFeign** | (Spring Cloud) | 声明式 HTTP 客户端 + Sentinel 熔断降级 |
+| **Spring Cloud LoadBalancer** | (Spring Cloud) | 客户端负载均衡 |
 | **Spring Security** | 6.x | Lambda DSL + JWT 无状态认证 |
 | **MyBatis-Plus** | 3.5.10.1 | ORM |
 | **MapStruct** | 1.6.3 | 编译期对象映射 |
@@ -223,6 +227,27 @@ MapStruct 自动生成 Convertor，App 层负责 Domain → DTO，Infrastructure
 
 集成 Spring Cloud Alibaba Sentinel，`SentinelConfig` 统一将 BlockException 转换为 COLA Response 格式。支持 Apollo 规则持久化和动态推送。
 
+### Feign 远程调用
+
+基于 Spring Cloud OpenFeign 实现声明式 HTTP 客户端，集成 Sentinel 实现熔断降级。遵循 COLA DDD 分层架构：
+
+```
+domain/.../NotificationGateway               (领域层接口)
+         ↑ 实现
+infrastructure/.../NotificationFeignClient    (Feign 声明式接口)
+infrastructure/.../NotificationFeignClientFallbackFactory  (Sentinel 降级)
+infrastructure/.../FeignClientConfig          (超时/重试配置)
+infrastructure/.../NotificationGatewayImpl    (Gateway 实现)
+         ↑ 注入
+app/.../OrderHandler                          (业务层调用)
+```
+
+关键设计：
+- **FallbackFactory**：可获取降级异常原因，便于日志排查
+- **Feign + Sentinel 整合**：Feign 调用自动受 Sentinel 流控/熔断规则保护
+- **非关键业务降级不影响主流程**：通知失败不阻塞订单创建
+- **不重试策略**：避免与 Sentinel 熔断冲突，异步重试建议通过消息队列实现
+
 ## 运维特性
 
 - **优雅停机**：Spring Boot graceful shutdown + Eureka 主动注销
@@ -234,6 +259,10 @@ MapStruct 自动生成 Convertor，App 层负责 Domain → DTO，Infrastructure
 - **请求日志**：`RequestLoggingAspect` 自动记录 Controller 请求耗时
 - **国际化**：ErrorCodeResolver SPI + MessageSource，默认英文，`Accept-Language: zh` 切换中文
 - **缓存穿透防护**：空值标记缓存（短 TTL），保护数据库
+
+## 开发环境启动优化
+
+dev profile 针对本地开发做了启动加速：关闭 Sentinel/Apollo/Zipkin 等中间件连接（避免超时等待）、开启 Bean 懒加载、减少连接池大小、关闭 JMX/定时任务/SpringDoc 自动初始化。主配置也将 Sentinel 改为延迟初始化（`eager: false`）并关闭 JMX。
 
 ## API 接口
 
@@ -280,7 +309,7 @@ Dockerfile 安全加固：非 root 用户运行、G1GC + 内存限制、内置 H
 ## 项目亮点
 
 - **严格分层**：Adapter 不依赖 Domain 业务逻辑，Infrastructure 不依赖 Adapter 和 Spring Security
-- **领域 SPI 模式**：8 个 SPI 接口实现层间解耦，Domain/Client 不依赖任何框架
+- **领域 SPI 模式**：9 个 SPI 接口实现层间解耦，Domain/Client 不依赖任何框架
 - **COLA 规范**：DTO/Cmd/PageQuery 统一继承 COLA 基类
 - **DDD + CQRS**：聚合根、值对象、领域事件、网关接口 + 按实体聚合 Handler
 - **双模认证**：JWT (内部用户) + API Key (第三方系统)，Refresh Token Rotation 防重放
@@ -288,4 +317,4 @@ Dockerfile 安全加固：非 root 用户运行、G1GC + 内存限制、内置 H
 - **分页全链路统一**：PageHelper + PageResult，Client 层零持久化依赖
 - **全链路可观测**：TraceId + Micrometer Tracing + Zipkin + 自定义健康指标
 - **国际化**：ErrorCodeResolver SPI + MessageSource，Client 层无 Spring 依赖
-- **微服务治理**：Eureka 注册发现 + Gateway 路由 + Sentinel 限流 + Apollo 配置中心
+- **微服务治理**：Eureka 注册发现 + Gateway 路由 + Sentinel 限流 + Apollo 配置中心 + OpenFeign 远程调用

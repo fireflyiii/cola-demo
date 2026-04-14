@@ -5,6 +5,9 @@ server:
 spring:
   application:
     name: cola-demo
+  # 关闭 JMX（微服务通过 Actuator/Prometheus 监控，不需要 JMX）
+  jmx:
+    enabled: false
   config:
     import: optional:apollo://
   datasource:
@@ -44,9 +47,12 @@ spring:
       transport:
         dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
         port: ${SENTINEL_PORT:8719}
-      eager: true
+      eager: false
       http-method-specify: true
       web-context-unify: false
+      # Feign 整合 Sentinel 开关
+      feign:
+        enabled: true
       datasource:
         # 流控规则 - 从 Apollo 加载
         flow:
@@ -62,6 +68,22 @@ spring:
             flow-rules-key: sentinel.degrade.rules
             rule-type: degrade
             default-flow-rule-value: "[]"
+
+    # OpenFeign 配置
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 5000
+            read-timeout: 10000
+            logger-level: basic
+      compression:
+        request:
+          enabled: true
+          mime-types: text/xml,application/xml,application/json
+          min-request-size: 2048
+        response:
+          enabled: true
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
