@@ -111,6 +111,7 @@ start → adapter, infrastructure
 | **Flyway** | (Spring Boot 管理) | 数据库版本管理 |
 | **springdoc** | 2.8.16 | OpenAPI 3 + Swagger UI |
 | **JJWT** | 0.12.7 | JWT Token 生成与验证 |
+| **Apollo** | 2.3.0 | 配置中心（apollo-client-config-data，支持 Spring Boot 3.x） |
 
 ## 快速开始
 
@@ -152,8 +153,37 @@ cp .env.example .env
 | `REDIS_PORT` | Redis 端口 | 6379 |
 | `REDIS_DATABASE` | Redis 数据库编号 | 0 |
 | `REDIS_SSL_ENABLED` | Redis SSL 开关 | false |
+| `APOLLO_META` | Apollo Meta Server 地址（优先级高于 apollo-env.properties） | - |
+| `APOLLO_CACHE_DIR` | Apollo 本地缓存目录 | - |
+| `APOLLO_CLUSTER` | Apollo 集群名称 | default |
 
-### 4. 编译并启动
+### 4. 配置中心（Apollo）
+
+项目已集成 Apollo 配置中心，支持配置集中管理和动态推送。使用 `apollo-client-config-data` + `spring.config.import` 方式集成，无需 bootstrap 文件。
+
+**Apollo 配置文件**：
+
+| 文件 | 说明 |
+|------|------|
+| `META-INF/app.properties` | AppId 配置（app.id=cola-demo） |
+| `apollo-env.properties` | 各环境 Meta Server 地址 |
+
+**环境切换**：通过 JVM 参数 `-Denv=DEV` 指定当前环境，Apollo 会自动匹配 `apollo-env.properties` 中对应的 Meta Server 地址。
+
+| JVM 参数 | 环境 |
+|---------|------|
+| `-Denv=DEV` | 开发 |
+| `-Denv=SIT` | 系统集成测试 |
+| `-Denv=UAT` | 用户验收测试 |
+| `-Denv=PROD` | 生产 |
+
+**本地开发**：不连接 Apollo 时，`spring.config.import: optional:apollo://` 中的 `optional:` 前缀确保应用使用本地 YAML 配置正常启动，不会因 Apollo 不可用而报错。
+
+**配置优先级**：Apollo 配置 > 本地 application.yml > 默认值。本地配置作为兜底，Apollo 中存在的同名配置会覆盖本地值。
+
+**Apollo 配置参考**：`cola-demo-start/src/main/resources/apollo-config-reference.properties` 提供了可直接复制到 Apollo Portal 的 properties 格式配置模板（DEV 环境值），搭建好 Apollo 后复制粘贴到 `application` 命名空间即可，其他环境按实际修改对应值。
+
+### 5. 编译并启动
 
 ```bash
 # 编译项目
@@ -491,6 +521,15 @@ mvn clean package -DskipTests
 docker build -t cola-demo:latest .
 ```
 
+### Docker 运行时环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `ENV` | Apollo 环境（通过 `-Denv` 传递给 JVM） | `PROD` |
+| `APOLLO_META` | Apollo Meta Server 地址 | - |
+| `DB_USERNAME` / `DB_PASSWORD` | 数据库凭据 | - |
+| `JWT_SECRET` | JWT 签名密钥 | - |
+
 ### Docker Compose
 
 ```bash
@@ -527,7 +566,7 @@ Dockerfile 安全加固：
 - **API 文档**: springdoc OpenAPI 3 + Swagger UI
 - **数据库版本管理**: Flyway 自动迁移
 - **Docker 支持**: 安全加固 Dockerfile + docker-compose
-- **生产就绪**: Prometheus 监控、日志滚动、多环境配置
+- **Apollo 配置中心**: apollo-client-config-data + spring.config.import，支持多环境、动态推送、本地缓存兜底
 
 ## 生产环境检查清单
 
@@ -538,5 +577,6 @@ Dockerfile 安全加固：
 - [ ] 限制 Actuator 端点访问
 - [ ] 配置日志收集（ELK）
 - [ ] 配置监控告警（Prometheus + Grafana）
+- [ ] 配置 Apollo 配置中心（修改 `apollo-env.properties` 中各环境 Meta Server 地址）
 - [ ] 配置 CORS 允许域名
 - [ ] 启用 Redis SSL（云服务）

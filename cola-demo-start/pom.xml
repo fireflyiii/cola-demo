@@ -49,6 +49,12 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
+        <!-- Apollo 配置中心客户端（已包含 apollo-client） -->
+        <dependency>
+            <groupId>com.ctrip.framework.apollo</groupId>
+            <artifactId>apollo-client-config-data</artifactId>
+        </dependency>
+
 
     </dependencies>
 
